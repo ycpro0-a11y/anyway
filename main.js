@@ -321,139 +321,169 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5. 각종 세금 계산기 (Tax)
   // ==========================================
   const initTax = () => {
-    const typeRadios = document.querySelectorAll('input[name="tax-category"]');
-    const inputVat = document.getElementById('tax-input-vat');
-    const inputGift = document.getElementById('tax-input-gift');
+    const categorySelect = document.getElementById('tax-category-select');
+    const formGroups = document.querySelectorAll('.tax-form-group');
     
-    // VAT
-    const vatAmountInput = document.getElementById('vat-amount');
-    const vatBaseRadios = document.querySelectorAll('input[name="vat-base"]');
-    
-    // Gift
-    const giftAmountInput = document.getElementById('gift-amount');
-    const giftRelationSelect = document.getElementById('gift-relation');
-
+    // Result elements
     const resultArea = document.getElementById('tax-result');
     const finalAmountEl = document.getElementById('tax-final-amount');
     const detailsEl = document.getElementById('tax-result-details');
     const resultLabelEl = document.getElementById('tax-result-label');
 
-    let currentTaxType = 'vat';
-    let vatVal = 0;
-    let giftVal = 0;
-
-    const handleTaxTypeChange = (e) => {
-      currentTaxType = e.target.value;
-      if (currentTaxType === 'vat') {
-        inputVat.style.display = 'block';
-        inputGift.style.display = 'none';
-      } else {
-        inputVat.style.display = 'none';
-        inputGift.style.display = 'block';
-      }
+    const handleCategoryChange = () => {
+      const selected = categorySelect.value;
+      formGroups.forEach(g => {
+        g.style.display = g.id === `tax-input-${selected}` ? 'block' : 'none';
+      });
       calc();
     };
 
-    typeRadios.forEach(r => r.addEventListener('change', handleTaxTypeChange));
+    categorySelect.addEventListener('change', handleCategoryChange);
 
+    // --- 1. VAT Logic ---
     const calcVat = () => {
-      if (!vatVal) return null;
+      const val = parseNum(document.getElementById('vat-amount').value);
+      if (!val) return null;
       const isSupply = document.querySelector('input[name="vat-base"]:checked').value === 'supply';
       let supply = 0, vat = 0, total = 0;
-      
-      if (isSupply) {
-        supply = vatVal;
-        vat = Math.floor(supply * 0.1);
-        total = supply + vat;
-      } else {
-        total = vatVal;
-        supply = Math.round(total / 1.1);
-        vat = total - supply;
-      }
-      return { supply, vat, total };
+      if (isSupply) { supply = val; vat = Math.floor(supply * 0.1); total = supply + vat; }
+      else { total = val; supply = Math.round(total / 1.1); vat = total - supply; }
+      return { label: '부가가치세 (10%)', main: vat, details: `
+        <div class="row"><span class="result-label">공급가액</span><span class="result-value">${formatCurrency(supply)} 원</span></div>
+        <div class="row"><span class="result-label">합계금액</span><span class="result-value">${formatCurrency(total)} 원</span></div>
+      ` };
     };
 
+    // --- 2. Gift Logic ---
     const calcGift = () => {
-      if (!giftVal) return null;
-      const deduction = parseInt(giftRelationSelect.value, 10);
-      const taxBase = Math.max(0, giftVal - deduction); // 과세표준
-      
-      let taxRate = 0;
-      let progressiveDeduction = 0;
+      const val = parseNum(document.getElementById('gift-amount').value);
+      if (!val) return null;
+      const deduction = parseInt(document.getElementById('gift-relation').value, 10);
+      const taxBase = Math.max(0, val - deduction);
+      let taxRate = 0, progressive = 0;
+      if (taxBase <= 100000000) { taxRate = 0.1; progressive = 0; }
+      else if (taxBase <= 500000000) { taxRate = 0.2; progressive = 10000000; }
+      else if (taxBase <= 1000000000) { taxRate = 0.3; progressive = 60000000; }
+      else if (taxBase <= 3000000000) { taxRate = 0.4; progressive = 160000000; }
+      else { taxRate = 0.5; progressive = 460000000; }
+      const calculated = Math.max(0, (taxBase * taxRate) - progressive);
+      const finalTax = Math.max(0, calculated * 0.97); // 3% 신고세액공제
+      return { label: '예상 증여세액', main: finalTax, details: `
+        <div class="row"><span class="result-label">과세표준 (공제 후)</span><span class="result-value">${formatCurrency(taxBase)} 원</span></div>
+        <div class="row"><span class="result-label">산출세액</span><span class="result-value">${formatCurrency(calculated)} 원</span></div>
+        <div class="row"><span class="result-label">신고세액공제 (3%)</span><span class="result-value" style="color: var(--color-error);">- ${formatCurrency(calculated * 0.03)} 원</span></div>
+      ` };
+    };
 
-      if (taxBase <= 100000000) { taxRate = 0.1; progressiveDeduction = 0; }
-      else if (taxBase <= 500000000) { taxRate = 0.2; progressiveDeduction = 10000000; }
-      else if (taxBase <= 1000000000) { taxRate = 0.3; progressiveDeduction = 60000000; }
-      else if (taxBase <= 3000000000) { taxRate = 0.4; progressiveDeduction = 160000000; }
-      else { taxRate = 0.5; progressiveDeduction = 460000000; }
+    // --- 3. Acquisition (취득세) ---
+    const calcAcq = () => {
+      const val = parseNum(document.getElementById('acq-amount').value);
+      if (!val) return null;
+      const houseCount = parseInt(document.querySelector('input[name="acq-house"]:checked').value, 10);
+      let rate = 0;
+      if (houseCount === 1) {
+        if (val <= 600000000) rate = 0.01;
+        else if (val <= 900000000) rate = (val * (2 / 300000000) - 3) / 100;
+        else rate = 0.03;
+      } else if (houseCount === 2) rate = 0.01; // 비조정 2주택 기준 단순화
+      else rate = 0.08; // 3주택 이상 단순화 (8~12%)
 
-      const calculatedTax = Math.max(0, (taxBase * taxRate) - progressiveDeduction);
-      // 신고세액공제 3% (단순화)
-      const reportDeduction = calculatedTax * 0.03;
-      const finalTax = Math.max(0, calculatedTax - reportDeduction);
+      const acqTax = val * rate;
+      const eduTax = acqTax * 0.1;
+      const agriTax = (val > 85000000) ? val * 0.002 : 0; // 농특세 단순화
+      return { label: '취득세 합계 (추정)', main: acqTax + eduTax + agriTax, details: `
+        <div class="row"><span class="result-label">취득세 (${(rate * 100).toFixed(2)}%)</span><span class="result-value">${formatCurrency(acqTax)} 원</span></div>
+        <div class="row"><span class="result-label">지방교육세/농특세 등</span><span class="result-value">${formatCurrency(eduTax + agriTax)} 원</span></div>
+      ` };
+    };
 
-      return { taxBase, calculatedTax, reportDeduction, finalTax };
+    // --- 4. Property (재산세) ---
+    const calcProp = () => {
+      const val = parseNum(document.getElementById('prop-value').value);
+      if (!val) return null;
+      const taxBase = val * 0.6; // 공정시장가액비율 60% 가정
+      let tax = 0;
+      if (taxBase <= 60000000) tax = taxBase * 0.001;
+      else if (taxBase <= 150000000) tax = 60000 + (taxBase - 60000000) * 0.0015;
+      else if (taxBase <= 300000000) tax = 195000 + (taxBase - 150000000) * 0.0025;
+      else tax = 570000 + (taxBase - 300000000) * 0.004;
+      return { label: '주택 재산세 (1년분 추정)', main: tax, details: `
+        <div class="row"><span class="result-label">과세표준 (공시가격의 60%)</span><span class="result-value">${formatCurrency(taxBase)} 원</span></div>
+        <p class="help-text" style="margin-top:8px;">* 지방교육세, 재산세 도시지역분 등은 제외된 산출세액입니다.</p>
+      ` };
+    };
+
+    // --- 5. Comprehensive (종부세) ---
+    const calcComp = () => {
+      const val = parseNum(document.getElementById('comp-value').value);
+      if (!val) return null;
+      const deduction = parseInt(document.querySelector('input[name="comp-type"]:checked').value, 10);
+      const taxBase = Math.max(0, (val - deduction) * 0.6);
+      let rate = 0;
+      if (taxBase <= 300000000) rate = 0.005;
+      else if (taxBase <= 600000000) rate = 0.007;
+      else rate = 0.01; // 단순화된 구간
+      const tax = taxBase * rate;
+      return { label: '종합부동산세 (추정)', main: tax, details: `
+        <div class="row"><span class="result-label">과세표준 (공제 후)</span><span class="result-value">${formatCurrency(taxBase)} 원</span></div>
+        <div class="row"><span class="result-label">적용 세율</span><span class="result-value">${(rate * 100).toFixed(1)}%</span></div>
+      ` };
+    };
+
+    // --- 6. Gains (양도세) ---
+    const calcGain = () => {
+      const buy = parseNum(document.getElementById('gain-buy').value);
+      const sell = parseNum(document.getElementById('gain-sell').value);
+      if (!buy || !sell) return null;
+      const profit = Math.max(0, sell - buy - 5000000); // 기본경비 500만 가정
+      const rate = parseFloat(document.getElementById('gain-term').value);
+      let tax = 0;
+      if (rate > 0.5) tax = profit * rate; // 단기세율
+      else {
+        // 기본세율 단순화 (6~45%)
+        if (profit <= 14000000) tax = profit * 0.06;
+        else if (profit <= 50000000) tax = profit * 0.15 - 1260000;
+        else tax = profit * 0.24 - 5760000;
+      }
+      return { label: '양도소득세 (추정)', main: tax, details: `
+        <div class="row"><span class="result-label">양도 차익 (경비 공제 후)</span><span class="result-value">${formatCurrency(profit)} 원</span></div>
+        <p class="help-text" style="margin-top:8px;">* 1세대 1주택 비과세, 장기보유특별공제 등은 고려되지 않았습니다.</p>
+      ` };
     };
 
     const calc = () => {
-      if (currentTaxType === 'vat') {
-        const res = calcVat();
-        if (!res) { resultArea.style.display = 'none'; return; }
-        
-        resultLabelEl.textContent = '부가가치세 (10%)';
-        finalAmountEl.innerHTML = `${formatCurrency(res.vat)} <span class="unit">원</span>`;
-        detailsEl.innerHTML = `
-          <div class="row">
-            <span class="result-label">공급가액</span>
-            <span class="result-value">${formatCurrency(res.supply)} 원</span>
-          </div>
-          <div class="row">
-            <span class="result-label">합계금액</span>
-            <span class="result-value">${formatCurrency(res.total)} 원</span>
-          </div>
-        `;
-        resultArea.style.display = 'block';
-      } else {
-        const res = calcGift();
-        if (!res) { resultArea.style.display = 'none'; return; }
+      const type = categorySelect.value;
+      let res = null;
+      if (type === 'vat') res = calcVat();
+      else if (type === 'gift') res = calcGift();
+      else if (type === 'acq') res = calcAcq();
+      else if (type === 'prop') res = calcProp();
+      else if (type === 'comp') res = calcComp();
+      else if (type === 'gain') res = calcGain();
 
-        resultLabelEl.textContent = '예상 증여세액';
-        finalAmountEl.innerHTML = `${formatCurrency(res.finalTax)} <span class="unit">원</span>`;
-        detailsEl.innerHTML = `
-          <div class="row">
-            <span class="result-label">과세표준 (공제 후)</span>
-            <span class="result-value">${formatCurrency(res.taxBase)} 원</span>
-          </div>
-          <div class="row">
-            <span class="result-label">산출세액</span>
-            <span class="result-value">${formatCurrency(res.calculatedTax)} 원</span>
-          </div>
-          <div class="row">
-            <span class="result-label">신고세액공제 (3%)</span>
-            <span class="result-value" style="color: var(--color-error);">- ${formatCurrency(res.reportDeduction)} 원</span>
-          </div>
-        `;
-        resultArea.style.display = 'block';
-      }
+      if (!res) { resultArea.style.display = 'none'; return; }
+      resultLabelEl.textContent = res.label;
+      finalAmountEl.innerHTML = `${formatCurrency(res.main)} <span class="unit">원</span>`;
+      detailsEl.innerHTML = res.details;
+      resultArea.style.display = 'block';
     };
 
-    vatAmountInput.addEventListener('input', (e) => {
-      vatVal = parseNum(e.target.value);
-      e.target.value = vatVal ? formatCurrency(vatVal) : '';
-      calc();
+    // Event Listeners for all inputs in Tax section
+    document.querySelectorAll('#calc-tax input, #calc-tax select').forEach(el => {
+      el.addEventListener('input', (e) => {
+        if (e.target.type === 'text') {
+          const val = parseNum(e.target.value);
+          e.target.value = val ? formatCurrency(val) : '';
+        }
+        calc();
+      });
+      if (el.type === 'radio' || el.tagName === 'SELECT') {
+        el.addEventListener('change', calc);
+      }
     });
-    vatBaseRadios.forEach(r => r.addEventListener('change', calc));
-
-    giftAmountInput.addEventListener('input', (e) => {
-      giftVal = parseNum(e.target.value);
-      e.target.value = giftVal ? formatCurrency(giftVal) : '';
-      calc();
-    });
-    giftRelationSelect.addEventListener('change', calc);
 
     document.querySelector('.btn-clear[data-target="tax"]').addEventListener('click', () => {
-      vatVal = 0; giftVal = 0;
-      vatAmountInput.value = ''; giftAmountInput.value = '';
+      document.querySelectorAll('#calc-tax input[type="text"]').forEach(i => i.value = '');
       resultArea.style.display = 'none';
     });
   };
