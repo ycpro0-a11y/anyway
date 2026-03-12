@@ -156,10 +156,47 @@
           <!-- 4. 재산세 -->
           <div id="tax-input-prop" class="tax-form-group" style="display: none;">
             <div class="input-group">
+              <label for="prop-asset-type">과세 대상 구분</label>
+              <select id="prop-asset-type" class="select-field">
+                <option value="house" selected>주택 (아파트, 빌라, 단독 등)</option>
+                <option value="building">건축물 (상가, 사무실 등)</option>
+                <option value="land">토지 (대지, 임야 등)</option>
+              </select>
+            </div>
+
+            <div class="input-group">
               <label for="prop-value">시가표준액 (공시가격)</label>
               <div class="input-wrapper">
                 <input type="text" id="prop-value">
                 <span class="currency">원</span>
+              </div>
+            </div>
+
+            <!-- 주택 전용 옵션 -->
+            <div id="prop-house-option">
+              <div class="input-group">
+                <label>1세대 1주택 여부 (특례세율)</label>
+                <div class="radio-group">
+                  <input type="radio" id="prop-h1-no" name="prop-h1" value="no" checked>
+                  <label for="prop-h1-no">해당없음</label>
+                  <input type="radio" id="prop-h1-yes" name="prop-h1" value="yes">
+                  <label for="prop-h1-yes">1주택자</label>
+                </div>
+                <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
+                  * 공시가격 9억 이하 1주택자에게는 -0.05%p 인하된 특례세율이 적용됩니다.
+                </p>
+              </div>
+            </div>
+
+            <!-- 토지 전용 옵션 -->
+            <div id="prop-land-option" style="display: none;">
+              <div class="input-group">
+                <label for="prop-land-type">토지 과세 구분</label>
+                <select id="prop-land-type" class="select-field">
+                  <option value="gen">종합합산 (나대지, 잡종지 등)</option>
+                  <option value="sep">별도합산 (상가부속토지 등)</option>
+                  <option value="div">분리과세 (전, 답, 과수원 등)</option>
+                </select>
               </div>
             </div>
           </div>

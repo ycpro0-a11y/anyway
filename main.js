@@ -383,11 +383,71 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="row"><span>지방교육세</span><span>${formatCurrency(val * eduRate)} 원</span></div>
           <div class="row"><span>농어촌특별세</span><span>${formatCurrency(val * agriRate)} 원</span></div>` };
       } else if (type === 'prop') {
+        const assetType = document.getElementById('prop-asset-type').value;
         const val = parseNum(document.getElementById('prop-value').value);
         if (!val) { resultArea.style.display = 'none'; return; }
-        const base = val * 0.6;
-        let tax = base <= 60000000 ? base*0.001 : (base <= 150000000 ? 60000+(base-60000000)*0.0015 : (base <= 300000000 ? 195000+(base-150000000)*0.0025 : 570000+(base-300000000)*0.004));
-        res = { label: '재산세(추정)', main: tax * 1.3, details: `<span>재산세율: 0.1~0.4%</span><br><span>지방교육세 등 부가세 포함</span>` };
+
+        let tax = 0;
+        let details = '';
+        let ratio = assetType === 'house' ? 0.6 : 0.7;
+        const taxBase = val * ratio;
+
+        if (assetType === 'house') {
+          const isH1 = document.querySelector('input[name="prop-h1"]:checked').value === 'yes' && val <= 900000000;
+          
+          if (isH1) {
+            // 1주택 특례세율 (0.05% ~ 0.35%)
+            if (taxBase <= 60000000) tax = taxBase * 0.0005;
+            else if (taxBase <= 150000000) tax = 30000 + (taxBase - 60000000) * 0.001;
+            else if (taxBase <= 300000000) tax = 120000 + (taxBase - 150000000) * 0.002;
+            else tax = 420000 + (taxBase - 300000000) * 0.0035;
+            details = `<span>1주택자 특례세율 적용 (공정비율 60%)</span>`;
+          } else {
+            // 일반세율 (0.1% ~ 0.4%)
+            if (taxBase <= 60000000) tax = taxBase * 0.001;
+            else if (taxBase <= 150000000) tax = 60000 + (taxBase - 60000000) * 0.0015;
+            else if (taxBase <= 300000000) tax = 195000 + (taxBase - 150000000) * 0.0025;
+            else tax = 570000 + (taxBase - 300000000) * 0.004;
+            details = `<span>일반 주택 세율 적용 (공정비율 60%)</span>`;
+          }
+        } else if (assetType === 'building') {
+          tax = taxBase * 0.0025;
+          details = `<span>일반 건축물 세율 (0.25%, 공정비율 70%)</span>`;
+        } else if (assetType === 'land') {
+          const landType = document.getElementById('prop-land-type').value;
+          if (landType === 'gen') {
+            // 종합합산 (0.2% ~ 0.5%)
+            if (taxBase <= 50000000) tax = taxBase * 0.002;
+            else if (taxBase <= 100000000) tax = 100000 + (taxBase - 50000000) * 0.003;
+            else tax = 250000 + (taxBase - 100000000) * 0.005;
+            details = `<span>토지 종합합산 세율 (0.2~0.5%, 공정비율 70%)</span>`;
+          } else if (landType === 'sep') {
+            // 별도합산 (0.2% ~ 0.4%)
+            if (taxBase <= 200000000) tax = taxBase * 0.002;
+            else if (taxBase <= 1000000000) tax = 400000 + (taxBase - 200000000) * 0.003;
+            else tax = 2800000 + (taxBase - 1000000000) * 0.004;
+            details = `<span>토지 별도합산 세율 (0.2~0.4%, 공정비율 70%)</span>`;
+          } else {
+            // 분리과세 (전/답 0.07% 가정)
+            tax = taxBase * 0.0007;
+            details = `<span>토지 분리과세(농지 등) 세율 (0.07%, 공정비율 70%)</span>`;
+          }
+        }
+
+        // 재산세 총액 = 산출세액 + 지방교육세(20%) + 재산세 도시지역분(0.14% 가정)
+        const eduTax = tax * 0.2;
+        const cityTax = val * ratio * 0.0014;
+        const totalPropTax = tax + eduTax + cityTax;
+
+        res = { 
+          label: '재산세 총합 (부가세 포함)', 
+          main: totalPropTax, 
+          details: `
+            <div class="row"><span>산출세액 (재산세)</span><span>${formatCurrency(tax)} 원</span></div>
+            <div class="row"><span>지방교육세 (20%)</span><span>${formatCurrency(eduTax)} 원</span></div>
+            <div class="row"><span>도시지역분 (0.14%)</span><span>${formatCurrency(cityTax)} 원</span></div>
+            <div class="row"><span style="font-size:11px; color:var(--color-primary);">${details}</span></div>` 
+        };
       } else if (type === 'comp') {
         const val = parseNum(document.getElementById('comp-value').value);
         const deduct = parseInt(document.querySelector('input[name="comp-type"]:checked').value);
@@ -525,6 +585,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (categorySelect.value === 'comp') {
         document.getElementById('comp-rental-detail').style.display = (document.querySelector('input[name="comp-rental"]:checked').value === 'yes' ? 'block' : 'none');
       }
+      if (categorySelect.value === 'prop') {
+        const assetType = document.getElementById('prop-asset-type').value;
+        document.getElementById('prop-house-option').style.display = (assetType === 'house' ? 'block' : 'none');
+        document.getElementById('prop-land-option').style.display = (assetType === 'land' ? 'block' : 'none');
+      }
       calc();
     });
     document.querySelectorAll('#calc-tax input, #calc-tax select').forEach(el => {
@@ -533,6 +598,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el.name === 'gain-asset-type') document.getElementById('gain-live-option').style.display = (e.target.value === 'house1' ? 'block' : 'none');
         if (el.name === 'gain-rental') document.getElementById('gain-rental-detail').style.display = (e.target.value === 'yes' ? 'block' : 'none');
         if (el.name === 'comp-rental') document.getElementById('comp-rental-detail').style.display = (e.target.value === 'yes' ? 'block' : 'none');
+        if (el.id === 'prop-asset-type') {
+          document.getElementById('prop-house-option').style.display = (e.target.value === 'house' ? 'block' : 'none');
+          document.getElementById('prop-land-option').style.display = (e.target.value === 'land' ? 'block' : 'none');
+        }
         calc();
       });
       el.addEventListener('change', calc);
