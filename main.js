@@ -95,24 +95,75 @@ document.addEventListener('DOMContentLoaded', () => {
     const amtInput = document.getElementById('salary-amount');
     const taxfreeInput = document.getElementById('salary-taxfree');
     const resultArea = document.getElementById('salary-result');
+    
     const calc = () => {
       if (!salaryAmount || salaryAmount < 1000000) { resultArea.style.display = 'none'; return; }
-      const monthly = Math.floor(salaryAmount / 12);
+      
+      const monthlyGross = Math.floor(salaryAmount / 12);
       const taxfree = parseNum(taxfreeInput.value);
-      const taxable = Math.max(0, monthly - taxfree);
-      const pension = Math.min(taxable * 0.045, 265500);
-      const health = taxable * 0.03545;
-      const care = health * 0.1295;
-      const employ = taxable * 0.009;
-      const totalIns = pension + health + care + employ;
-      document.getElementById('salary-monthly').innerHTML = `${formatCurrency(monthly - totalIns)} <span class="unit">원</span>`;
-      document.getElementById('tax-total').textContent = `${formatCurrency(totalIns)} 원`;
+      const taxable = Math.max(0, monthlyGross - taxfree);
+      
+      // 4대보험 요율 (2024-2025 기준)
+      const pension = Math.min(taxable * 0.045, 265500); // 국민연금 상한액 적용
+      const health = taxable * 0.03545; // 건강보험
+      const care = health * 0.1295; // 장기요양 (건보료의 12.95%)
+      const employ = taxable * 0.009; // 고용보험
+      
+      // 근로소득세 간이세액 (근사치 계산 로직)
+      let incomeTax = 0;
+      const annualTaxable = taxable * 12;
+      if (annualTaxable <= 14000000) incomeTax = (annualTaxable * 0.06) / 12;
+      else if (annualTaxable <= 50000000) incomeTax = (annualTaxable * 0.15 - 1260000) / 12;
+      else if (annualTaxable <= 88000000) incomeTax = (annualTaxable * 0.24 - 5760000) / 12;
+      else if (annualTaxable <= 150000000) incomeTax = (annualTaxable * 0.35 - 15440000) / 12;
+      else incomeTax = (annualTaxable * 0.38 - 19940000) / 12;
+      
+      // 부양가족 1인 기준 간이세액 보정 (대략 80~90% 수준)
+      incomeTax = Math.max(0, incomeTax * 0.85);
+      const localTax = incomeTax * 0.1;
+      
+      const totalDeduction = pension + health + care + employ + incomeTax + localTax;
+      const netPay = monthlyGross - totalDeduction;
+
+      // 명세서 데이터 매핑
+      document.getElementById('stub-gross-pay').textContent = formatCurrency(monthlyGross) + ' 원';
+      document.getElementById('stub-taxable-pay').textContent = formatCurrency(taxable) + ' 원';
+      document.getElementById('stub-taxfree-pay').textContent = formatCurrency(taxfree) + ' 원';
+      
+      document.getElementById('stub-pension').textContent = formatCurrency(pension) + ' 원';
+      document.getElementById('stub-health').textContent = formatCurrency(health) + ' 원';
+      document.getElementById('stub-care').textContent = formatCurrency(care) + ' 원';
+      document.getElementById('stub-employ').textContent = formatCurrency(employ) + ' 원';
+      document.getElementById('stub-income-tax').textContent = formatCurrency(incomeTax) + ' 원';
+      document.getElementById('stub-local-tax').textContent = formatCurrency(localTax) + ' 원';
+      document.getElementById('stub-total-deduction').textContent = formatCurrency(totalDeduction) + ' 원';
+      
+      document.getElementById('stub-net-pay').textContent = formatCurrency(netPay) + ' 원';
+      
       resultArea.style.display = 'block';
     };
-    amtInput.addEventListener('input', (e) => { salaryAmount = parseNum(e.target.value); e.target.value = salaryAmount ? formatCurrency(salaryAmount) : ''; calc(); });
-    taxfreeInput.addEventListener('input', calc);
-    document.querySelectorAll('.btn-add-salary').forEach(btn => btn.addEventListener('click', (e) => { salaryAmount = parseInt(e.target.dataset.val); amtInput.value = formatCurrency(salaryAmount); calc(); }));
-    document.querySelector('.btn-clear[data-target="salary"]').addEventListener('click', () => { salaryAmount = 0; amtInput.value = ''; resultArea.style.display = 'none'; });
+    
+    amtInput.addEventListener('input', (e) => { 
+      salaryAmount = parseNum(e.target.value); 
+      e.target.value = salaryAmount ? formatCurrency(salaryAmount) : ''; 
+      calc(); 
+    });
+    taxfreeInput.addEventListener('input', (e) => {
+      e.target.value = formatCurrency(parseNum(e.target.value));
+      calc();
+    });
+    
+    document.querySelectorAll('.btn-add-salary').forEach(btn => btn.addEventListener('click', (e) => { 
+      salaryAmount = parseInt(e.target.dataset.val); 
+      amtInput.value = formatCurrency(salaryAmount); 
+      calc(); 
+    }));
+    
+    document.querySelector('.btn-clear[data-target="salary"]').addEventListener('click', () => { 
+      salaryAmount = 0; 
+      amtInput.value = ''; 
+      resultArea.style.display = 'none'; 
+    });
   };
 
   // 3. 예적금 계산기

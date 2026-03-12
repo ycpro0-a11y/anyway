@@ -366,15 +366,31 @@
         </form>
 
         <section class="result-area" id="salary-result" style="display: none;">
-          <h2>월 실수령액 시뮬레이션</h2>
-          <div class="result-box primary">
-            <span class="result-label">예상 월 실수령액</span>
-            <strong class="result-value highlight" id="salary-monthly">0 <span class="unit">원</span></strong>
-          </div>
-          <div class="result-box secondary">
-            <div class="row">
-              <span class="result-label">공제 합계 (4대보험+세금)</span>
-              <span class="result-value" id="tax-total">0 원</span>
+          <h2>예상 월급명세서 (Pay Stub)</h2>
+          <div class="pay-stub">
+            <div class="stub-section">
+              <h3>급여 항목 (Payment)</h3>
+              <div class="row"><span class="label">월 급여액(세전)</span><span class="value" id="stub-gross-pay">0 원</span></div>
+              <div class="row sub"><span class="label">- 과세 대상액</span><span class="value" id="stub-taxable-pay">0 원</span></div>
+              <div class="row sub"><span class="label">- 비과세액</span><span class="value" id="stub-taxfree-pay">0 원</span></div>
+            </div>
+            
+            <div class="stub-section">
+              <h3>공제 항목 (Deductions)</h3>
+              <div class="row"><span class="label">국민연금 (4.5%)</span><span class="value" id="stub-pension">0 원</span></div>
+              <div class="row"><span class="label">건강보험 (3.545%)</span><span class="value" id="stub-health">0 원</span></div>
+              <div class="row sub"><span class="label">- 장기요양보험</span><span class="value" id="stub-care">0 원</span></div>
+              <div class="row"><span class="label">고용보험 (0.9%)</span><span class="value" id="stub-employ">0 원</span></div>
+              <div class="row"><span class="label">근로소득세 (간이세액)</span><span class="value" id="stub-income-tax">0 원</span></div>
+              <div class="row sub"><span class="label">- 지방소득세 (10%)</span><span class="value" id="stub-local-tax">0 원</span></div>
+              <div class="row total"><span class="label">공제액 합계</span><span class="value" id="stub-total-deduction">0 원</span></div>
+            </div>
+
+            <div class="stub-section net-pay">
+              <div class="row">
+                <span class="label">예상 월 실수령액 (Net Pay)</span>
+                <strong class="value" id="stub-net-pay">0 원</strong>
+              </div>
             </div>
           </div>
         </section>
