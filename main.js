@@ -402,32 +402,83 @@ document.addEventListener('DOMContentLoaded', () => {
         const isRental = document.querySelector('input[name="gain-rental"]:checked').value === 'yes';
         const hold = parseInt(document.getElementById('gain-hold-years').value) || 0;
         const live = parseInt(document.getElementById('gain-live-years').value) || 0;
+        
         if (!buy || !sell) { resultArea.style.display = 'none'; return; }
+        
         let profit = sell - buy - expenses;
         let taxableProfit = profit;
+        let rentalMsg = '';
+
+        // 1주택 비과세
         if (asset === 'house1') {
           if (sell <= 1200000000) return { label: '양도소득세', main: 0, details: '1주택 비과세 대상' };
           taxableProfit = profit * (sell - 1200000000) / sell;
         }
+
+        // 장기보유특별공제
         let lthdRate = 0;
-        if (asset === 'house1' && hold >= 3) lthdRate = Math.min(hold * 4, 40) + Math.min(live * 4, 40);
-        else if (hold >= 3 && (!isReg || asset === 'other' || isRental)) lthdRate = Math.min(hold * 2, 30);
+        if (asset === 'house1' && hold >= 3) {
+          lthdRate = Math.min(hold * 4, 40) + Math.min(live * 4, 40);
+        } else if (isRental) {
+          const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
+          if (rentalYears >= 10) lthdRate = 70;
+          else if (rentalYears >= 8) lthdRate = 50;
+          else if (hold >= 3) lthdRate = Math.min(hold * 2, 30);
+          rentalMsg = rentalYears >= 8 ? `임대사업자 장특공(${lthdRate}%) 적용` : '';
+        } else if (hold >= 3) {
+          lthdRate = Math.min(hold * 2, 30);
+        }
+        
         const lthdAmount = taxableProfit * (lthdRate / 100);
         const taxBase = Math.max(0, taxableProfit - lthdAmount - 2500000);
         const { rate, deduct } = getIncomeTaxRate(taxBase);
+        
         let finalRate = rate;
         let isSurchargeApplied = false;
-        if (isReg && asset !== 'house1' && !isRental) { 
-          if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
-          else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
+        
+        // 다주택자 중과 (2026.05.09까지는 한시적 유예 상태이나, 로직상 조건 체크)
+        // 현재 날짜 기준(2026.03.12) 유예 기간 내이므로 기본세율 적용이 기본이나, 임대사업자 요건 충족 시 영구 배제
+        const isSurchargeSuspended = true; // 2026.05.09까지 유예
+
+        if (isReg && asset !== 'house1' && !isSurchargeSuspended) {
+          if (!isRental) {
+            if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
+            else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
+          } else {
+            // 임대사업자 중과배제 요건 체크
+            const regDate = document.getElementById('gain-rental-reg-date').value;
+            const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
+            const rentalPrice = parseNum(document.getElementById('gain-rental-price').value);
+            const isCapitalArea = isReg; // 조정지역=수도권 가정(단순화)
+            const priceLimit = isCapitalArea ? 600000000 : 300000000;
+            
+            let qualifiesForExclusion = false;
+            if (rentalPrice <= priceLimit) {
+              if (regDate === 'pre202007' && rentalYears >= 5) qualifiesForExclusion = true;
+              else if (regDate === 'mid202007' && rentalYears >= 8) qualifiesForExclusion = true;
+              else if (regDate === 'post202008' && rentalYears >= 10) qualifiesForExclusion = true;
+            }
+            
+            if (!qualifiesForExclusion) {
+              if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
+              else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
+              rentalMsg = '임대사업자 요건 미달(중과 적용)';
+            } else {
+              rentalMsg = '임대사업자 중과배제 적용';
+            }
+          }
+        } else if (isSurchargeSuspended && asset !== 'house1' && isReg) {
+          rentalMsg = '다주택자 중과 한시적 유예 적용 중 (~2026.05.09)';
         }
+
         const mainTax = (taxBase * finalRate) - deduct;
         const localTax = mainTax * 0.1;
+        
         res = { label: '양도소득세 총합 (지방세 포함)', main: mainTax + localTax, details: `
           <div class="row"><span>양도차익 (경비제외)</span><span>${formatCurrency(profit)} 원</span></div>
           <div class="row"><span>장특공 (${lthdRate}%)</span><span>-${formatCurrency(lthdAmount)} 원</span></div>
           <div class="row"><span>기본세율</span><span>${(rate*100).toFixed(0)}%</span></div>
-          ${isSurchargeApplied ? `<div class="row"><span>다주택 중과</span><span>+${((finalRate-rate)*100).toFixed(0)}%p</span></div>` : (isRental && isReg && asset !== 'house1' ? '<div class="row"><span>중과배제</span><span>임대사업자 적용</span></div>' : '')}
+          ${isSurchargeApplied ? `<div class="row"><span>다주택 중과</span><span>+${((finalRate-rate)*100).toFixed(0)}%p</span></div>` : (rentalMsg ? `<div class="row"><span style="font-size:11px;">혜택안내</span><span style="font-size:11px; color:var(--color-primary);">${rentalMsg}</span></div>` : '')}
           <div class="row"><span>지방소득세 (10%)</span><span>${formatCurrency(localTax)} 원</span></div>` };
       } else if (type === 'vat') {
         const val = parseNum(document.getElementById('vat-amount').value);
@@ -445,13 +496,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     categorySelect.addEventListener('change', () => {
       document.querySelectorAll('.tax-form-group').forEach(g => g.style.display = g.id === `tax-input-${categorySelect.value}` ? 'block' : 'none');
-      if (categorySelect.value === 'gain') document.getElementById('gain-live-option').style.display = (document.querySelector('input[name="gain-asset-type"]:checked').value === 'house1' ? 'block' : 'none');
+      if (categorySelect.value === 'gain') {
+        const assetType = document.querySelector('input[name="gain-asset-type"]:checked').value;
+        document.getElementById('gain-live-option').style.display = (assetType === 'house1' ? 'block' : 'none');
+        document.getElementById('gain-rental-detail').style.display = (document.querySelector('input[name="gain-rental"]:checked').value === 'yes' ? 'block' : 'none');
+      }
       calc();
     });
     document.querySelectorAll('#calc-tax input, #calc-tax select').forEach(el => {
       el.addEventListener('input', (e) => {
         if (e.target.type === 'text') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
         if (el.name === 'gain-asset-type') document.getElementById('gain-live-option').style.display = (e.target.value === 'house1' ? 'block' : 'none');
+        if (el.name === 'gain-rental') document.getElementById('gain-rental-detail').style.display = (e.target.value === 'yes' ? 'block' : 'none');
         calc();
       });
       el.addEventListener('change', calc);

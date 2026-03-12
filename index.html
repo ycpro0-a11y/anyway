@@ -250,6 +250,35 @@
                 <label for="gain-rental2">사업자 등록</label>
               </div>
             </div>
+
+            <!-- 임대사업자 상세 설정 (사업자 등록 시에만 노출되도록 JS 처리 필요) -->
+            <div id="gain-rental-detail" style="display: none; background: var(--color-input-bg); padding: 12px; border-radius: var(--radius-sm); margin-top: -12px; border: 1px solid var(--color-border);">
+              <div class="input-group">
+                <label for="gain-rental-reg-date">임대주택 등록 시기</label>
+                <select id="gain-rental-reg-date" class="select-field">
+                  <option value="pre202007">2020.07.10 이전</option>
+                  <option value="mid202007">2020.07.11 ~ 08.17</option>
+                  <option value="post202008" selected>2020.08.18 이후</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="gain-rental-years">실제 임대 기간 (년)</label>
+                <div class="input-wrapper">
+                  <input type="number" id="gain-rental-years" placeholder="예: 10" min="0">
+                  <span class="currency">년</span>
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="gain-rental-price">임대개시 시점 공시가격</label>
+                <div class="input-wrapper">
+                  <input type="text" id="gain-rental-price" placeholder="수도권 6억/지방 3억 이하">
+                  <span class="currency">원</span>
+                </div>
+              </div>
+              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
+                * 임대료 증액 5% 제한 준수 시에만 혜택이 적용됩니다.
+              </p>
+            </div>
           </div>
 
           <!-- 7. VAT -->
