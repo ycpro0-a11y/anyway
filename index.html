@@ -290,6 +290,80 @@
         </section>
       </section>
 
+      <!-- ==============================================
+           5. 각종 세금 계산기
+           ============================================== -->
+      <section id="calc-tax" class="calc-section">
+        <form>
+          <div class="input-group">
+            <label>세금 종류</label>
+            <div class="radio-group">
+              <input type="radio" id="tax-type-vat" name="tax-category" value="vat" checked>
+              <label for="tax-type-vat">부가가치세</label>
+              <input type="radio" id="tax-type-gift" name="tax-category" value="gift">
+              <label for="tax-type-gift">증여세</label>
+            </div>
+          </div>
+
+          <!-- VAT 입력 -->
+          <div id="tax-input-vat">
+            <div class="input-group">
+              <label for="vat-amount">금액 (원)</label>
+              <div class="input-wrapper">
+                <input type="text" id="vat-amount" placeholder="예: 1,100,000" inputmode="numeric">
+                <span class="currency">원</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>계산 기준</label>
+              <div class="radio-group">
+                <input type="radio" id="vat-base1" name="vat-base" value="total" checked>
+                <label for="vat-base1">합계금액 기준</label>
+                <input type="radio" id="vat-base2" name="vat-base" value="supply">
+                <label for="vat-base2">공급가액 기준</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 증여세 입력 -->
+          <div id="tax-input-gift" style="display: none;">
+            <div class="input-group">
+              <label for="gift-amount">증여 재산가액 (원)</label>
+              <div class="input-wrapper">
+                <input type="text" id="gift-amount" placeholder="예: 100,000,000" inputmode="numeric">
+                <span class="currency">원</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="gift-relation">증여자(준 사람)와의 관계</label>
+              <select id="gift-relation" style="width: 100%; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-input-bg); font-family: var(--font-family); font-size: 15px;">
+                <option value="600000000">배우자 (6억 공제)</option>
+                <option value="50000000" selected>직계존속 (5천만 공제)</option>
+                <option value="50000000">직계비속 (5천만 공제)</option>
+                <option value="20000000">기타친족 (2천만 공제)</option>
+                <option value="0">타인 (공제 없음)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="text-align: right; margin-top: 16px; margin-bottom: 16px;">
+            <button type="button" class="btn-clear" data-target="tax" style="padding: 6px 12px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; background: white;">초기화</button>
+          </div>
+        </form>
+
+        <section class="result-area" id="tax-result" style="display: none;">
+          <h2>계산 결과</h2>
+          <div class="result-box primary" style="background-color: #6B7280;">
+            <span class="result-label" id="tax-result-label">부가가치세 (10%)</span>
+            <strong class="result-value highlight" id="tax-final-amount">0 <span class="unit">원</span></strong>
+          </div>
+          <div class="result-box secondary" id="tax-result-details">
+            <!-- 상세 결과가 JS로 삽입됨 -->
+          </div>
+          <p class="notice">* 단순 참고용이며, 정확한 세액은 세무사와 상담하세요.</p>
+        </section>
+      </section>
+
     </main>
 
     <ad-placeholder width="100%" height="70px" text="[광고] 2030 직장인 재테크 세미나 신청 (구글 애드센스)"></ad-placeholder>
@@ -315,6 +389,10 @@
       <a href="#" class="nav-item" data-tab="calc-stock" data-title="주식 평단가 계산기" data-desc="정확한 물타기로 평단가를 낮춰보세요">
         <span class="nav-icon">📉</span>
         <span class="nav-text">주식/코인</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="calc-tax" data-title="종합 세금 계산기" data-desc="부가가치세, 증여세 등 생활 세금 계산">
+        <span class="nav-icon">🧾</span>
+        <span class="nav-text">세금</span>
       </a>
     </nav>
 

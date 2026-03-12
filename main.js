@@ -317,10 +317,152 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  // ==========================================
+  // 5. 각종 세금 계산기 (Tax)
+  // ==========================================
+  const initTax = () => {
+    const typeRadios = document.querySelectorAll('input[name="tax-category"]');
+    const inputVat = document.getElementById('tax-input-vat');
+    const inputGift = document.getElementById('tax-input-gift');
+    
+    // VAT
+    const vatAmountInput = document.getElementById('vat-amount');
+    const vatBaseRadios = document.querySelectorAll('input[name="vat-base"]');
+    
+    // Gift
+    const giftAmountInput = document.getElementById('gift-amount');
+    const giftRelationSelect = document.getElementById('gift-relation');
+
+    const resultArea = document.getElementById('tax-result');
+    const finalAmountEl = document.getElementById('tax-final-amount');
+    const detailsEl = document.getElementById('tax-result-details');
+    const resultLabelEl = document.getElementById('tax-result-label');
+
+    let currentTaxType = 'vat';
+    let vatVal = 0;
+    let giftVal = 0;
+
+    const handleTaxTypeChange = (e) => {
+      currentTaxType = e.target.value;
+      if (currentTaxType === 'vat') {
+        inputVat.style.display = 'block';
+        inputGift.style.display = 'none';
+      } else {
+        inputVat.style.display = 'none';
+        inputGift.style.display = 'block';
+      }
+      calc();
+    };
+
+    typeRadios.forEach(r => r.addEventListener('change', handleTaxTypeChange));
+
+    const calcVat = () => {
+      if (!vatVal) return null;
+      const isSupply = document.querySelector('input[name="vat-base"]:checked').value === 'supply';
+      let supply = 0, vat = 0, total = 0;
+      
+      if (isSupply) {
+        supply = vatVal;
+        vat = Math.floor(supply * 0.1);
+        total = supply + vat;
+      } else {
+        total = vatVal;
+        supply = Math.round(total / 1.1);
+        vat = total - supply;
+      }
+      return { supply, vat, total };
+    };
+
+    const calcGift = () => {
+      if (!giftVal) return null;
+      const deduction = parseInt(giftRelationSelect.value, 10);
+      const taxBase = Math.max(0, giftVal - deduction); // 과세표준
+      
+      let taxRate = 0;
+      let progressiveDeduction = 0;
+
+      if (taxBase <= 100000000) { taxRate = 0.1; progressiveDeduction = 0; }
+      else if (taxBase <= 500000000) { taxRate = 0.2; progressiveDeduction = 10000000; }
+      else if (taxBase <= 1000000000) { taxRate = 0.3; progressiveDeduction = 60000000; }
+      else if (taxBase <= 3000000000) { taxRate = 0.4; progressiveDeduction = 160000000; }
+      else { taxRate = 0.5; progressiveDeduction = 460000000; }
+
+      const calculatedTax = Math.max(0, (taxBase * taxRate) - progressiveDeduction);
+      // 신고세액공제 3% (단순화)
+      const reportDeduction = calculatedTax * 0.03;
+      const finalTax = Math.max(0, calculatedTax - reportDeduction);
+
+      return { taxBase, calculatedTax, reportDeduction, finalTax };
+    };
+
+    const calc = () => {
+      if (currentTaxType === 'vat') {
+        const res = calcVat();
+        if (!res) { resultArea.style.display = 'none'; return; }
+        
+        resultLabelEl.textContent = '부가가치세 (10%)';
+        finalAmountEl.innerHTML = `${formatCurrency(res.vat)} <span class="unit">원</span>`;
+        detailsEl.innerHTML = `
+          <div class="row">
+            <span class="result-label">공급가액</span>
+            <span class="result-value">${formatCurrency(res.supply)} 원</span>
+          </div>
+          <div class="row">
+            <span class="result-label">합계금액</span>
+            <span class="result-value">${formatCurrency(res.total)} 원</span>
+          </div>
+        `;
+        resultArea.style.display = 'block';
+      } else {
+        const res = calcGift();
+        if (!res) { resultArea.style.display = 'none'; return; }
+
+        resultLabelEl.textContent = '예상 증여세액';
+        finalAmountEl.innerHTML = `${formatCurrency(res.finalTax)} <span class="unit">원</span>`;
+        detailsEl.innerHTML = `
+          <div class="row">
+            <span class="result-label">과세표준 (공제 후)</span>
+            <span class="result-value">${formatCurrency(res.taxBase)} 원</span>
+          </div>
+          <div class="row">
+            <span class="result-label">산출세액</span>
+            <span class="result-value">${formatCurrency(res.calculatedTax)} 원</span>
+          </div>
+          <div class="row">
+            <span class="result-label">신고세액공제 (3%)</span>
+            <span class="result-value" style="color: var(--color-error);">- ${formatCurrency(res.reportDeduction)} 원</span>
+          </div>
+        `;
+        resultArea.style.display = 'block';
+      }
+    };
+
+    vatAmountInput.addEventListener('input', (e) => {
+      vatVal = parseNum(e.target.value);
+      e.target.value = vatVal ? formatCurrency(vatVal) : '';
+      calc();
+    });
+    vatBaseRadios.forEach(r => r.addEventListener('change', calc));
+
+    giftAmountInput.addEventListener('input', (e) => {
+      giftVal = parseNum(e.target.value);
+      e.target.value = giftVal ? formatCurrency(giftVal) : '';
+      calc();
+    });
+    giftRelationSelect.addEventListener('change', calc);
+
+    document.querySelector('.btn-clear[data-target="tax"]').addEventListener('click', () => {
+      vatVal = 0; giftVal = 0;
+      vatAmountInput.value = ''; giftAmountInput.value = '';
+      resultArea.style.display = 'none';
+    });
+  };
+
   // Initialize all calculators
   initLoan();
   initSalary();
   initSavings();
   initStock();
+  initTax();
 
 });
