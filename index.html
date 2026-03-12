@@ -362,16 +362,25 @@
               </div>
             </div>
             <div class="input-group">
-              <label>주택 보유 수</label>
+              <label>취득 후 주택 수</label>
               <div class="radio-group">
                 <input type="radio" id="acq-h1" name="acq-house" value="1" checked>
                 <label for="acq-h1">1주택</label>
                 <input type="radio" id="acq-h2" name="acq-house" value="2">
                 <label for="acq-h2">2주택</label>
                 <input type="radio" id="acq-h3" name="acq-house" value="3">
-                <label for="acq-h3">3주택 이상</label>
+                <label for="acq-h3">3주택+</label>
               </div>
-              <p class="help-text">비조정대상지역 주택 기준 세율이 적용됩니다.</p>
+            </div>
+            <div class="input-group">
+              <label>매수 주택 지역</label>
+              <div class="radio-group">
+                <input type="radio" id="acq-area1" name="acq-area" value="non" checked>
+                <label for="acq-area1">비규제지역</label>
+                <input type="radio" id="acq-area2" name="acq-area" value="reg">
+                <label for="acq-area2">규제지역</label>
+              </div>
+              <p class="help-text">규제지역(조정대상지역) 여부에 따라 다주택자 세율이 달라집니다.</p>
             </div>
           </div>
 
