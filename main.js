@@ -24,7 +24,10 @@ class AdPlaceholder extends HTMLElement {
 customElements.define('ad-placeholder', AdPlaceholder);
 
 // 공통 유틸리티
-const formatCurrency = (num) => Math.round(num).toLocaleString('ko-KR');
+const formatCurrency = (num) => {
+  if (isNaN(num) || num === Infinity || num === -Infinity) return '0';
+  return Math.round(num).toLocaleString('ko-KR');
+};
 const parseNum = (str) => {
   if (typeof str !== 'string') return parseInt(str, 10) || 0;
   return parseInt(str.replace(/,/g, '').replace(/[^0-9]/g, ''), 10) || 0;
@@ -63,9 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const calc = () => {
       const rate = parseFloat(rateInput.value);
       const months = parseInt(termInput.value, 10);
-      const type = document.querySelector('input[name="loan-type"]:checked').value;
+      const typeEl = document.querySelector('input[name="loan-type"]:checked');
+      const type = typeEl ? typeEl.value : 'equal_principal_interest';
       
-      if (!loanAmount || !rate || !months) { resultArea.style.display = 'none'; return; }
+      if (!loanAmount || isNaN(rate) || !months || months <= 0) { 
+        resultArea.style.display = 'none'; 
+        return; 
+      }
       
       const monthlyRate = (rate / 100) / 12;
       let monthlyPayment = 0, totalInterest = 0;
@@ -73,8 +80,13 @@ document.addEventListener('DOMContentLoaded', () => {
       let balance = loanAmount;
 
       if (type === 'equal_principal_interest') {
-        const p = Math.pow(1 + monthlyRate, months);
-        monthlyPayment = loanAmount * monthlyRate * p / (p - 1);
+        // 원리금균등
+        if (monthlyRate === 0) {
+          monthlyPayment = loanAmount / months;
+        } else {
+          const p = Math.pow(1 + monthlyRate, months);
+          monthlyPayment = loanAmount * monthlyRate * p / (p - 1);
+        }
         
         for (let i = 1; i <= months; i++) {
           const interest = balance * monthlyRate;
@@ -84,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
           totalInterest += interest;
         }
       } else if (type === 'equal_principal') {
+        // 원금균등
         const principalPerMonth = loanAmount / months;
         for (let i = 1; i <= months; i++) {
           const interest = balance * monthlyRate;
@@ -92,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
           schedule.push({ month: i, principal: principalPerMonth, interest, total, balance: Math.max(0, balance) });
           totalInterest += interest;
         }
-        monthlyPayment = (loanAmount + totalInterest) / months;
+        monthlyPayment = (loanAmount + totalInterest) / months; // 월평균
       } else {
         // 만기일시
         const interestPerMonth = loanAmount * monthlyRate;
@@ -100,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const isLast = i === months;
           const principal = isLast ? loanAmount : 0;
           const total = interestPerMonth + principal;
-          if (isLast) balance = 0;
+          balance = isLast ? 0 : loanAmount;
           schedule.push({ month: i, principal, interest: interestPerMonth, total, balance });
           totalInterest += interestPerMonth;
         }
@@ -112,26 +125,49 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loan-total-interest').textContent = `${formatCurrency(totalInterest)} 원`;
       document.getElementById('loan-total-repayment').textContent = `${formatCurrency(loanAmount + totalInterest)} 원`;
       
-      // 스케줄 렌더링
-      scheduleBody.innerHTML = schedule.map(row => `
-        <tr style="border-bottom: 1px solid var(--color-border);">
-          <td style="padding: 8px; text-align: center;">${row.month}회</td>
-          <td style="padding: 8px; text-align: right;">${formatCurrency(row.principal)}</td>
-          <td style="padding: 8px; text-align: right;">${formatCurrency(row.interest)}</td>
-          <td style="padding: 8px; text-align: right;">${formatCurrency(row.total)}</td>
-          <td style="padding: 8px; text-align: right; color: var(--color-text-caption);">${formatCurrency(row.balance)}</td>
+      // 스케줄 렌더링 (최대 600회까지만 표시하여 성능 보호)
+      const displaySchedule = schedule.slice(0, 600);
+      scheduleBody.innerHTML = displaySchedule.map(row => `
+        <tr>
+          <td style="padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--color-border);">${row.month}회</td>
+          <td style="padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--color-border);">${formatCurrency(row.principal)}</td>
+          <td style="padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--color-border);">${formatCurrency(row.interest)}</td>
+          <td style="padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--color-border); font-weight: 600;">${formatCurrency(row.total)}</td>
+          <td style="padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--color-border); color: var(--color-text-caption);">${formatCurrency(row.balance)}</td>
         </tr>
       `).join('');
+
+      if (schedule.length > 600) {
+        scheduleBody.innerHTML += `<tr><td colspan="5" style="padding: 16px; text-align: center; color: var(--color-text-caption);">... (600회 이후 생략)</td></tr>`;
+      }
 
       resultArea.style.display = 'block';
     };
 
-    amtInput.addEventListener('input', (e) => { loanAmount = parseNum(e.target.value); e.target.value = loanAmount ? formatCurrency(loanAmount) : ''; calc(); });
+    amtInput.addEventListener('input', (e) => { 
+      loanAmount = parseNum(e.target.value); 
+      e.target.value = loanAmount ? formatCurrency(loanAmount) : ''; 
+      calc(); 
+    });
     [rateInput, termInput].forEach(i => i.addEventListener('input', calc));
     document.querySelectorAll('input[name="loan-type"]').forEach(r => r.addEventListener('change', calc));
-    document.querySelectorAll('.btn-add-loan').forEach(btn => btn.addEventListener('click', (e) => { loanAmount += parseInt(e.target.dataset.val); amtInput.value = formatCurrency(loanAmount); calc(); }));
-    document.querySelectorAll('.btn-term-loan').forEach(btn => btn.addEventListener('click', (e) => { termInput.value = e.target.dataset.term; calc(); }));
-    document.querySelector('.btn-clear[data-target="loan"]').addEventListener('click', () => { loanAmount = 0; amtInput.value = ''; rateInput.value = ''; termInput.value = ''; resultArea.style.display = 'none'; });
+    
+    document.querySelectorAll('.btn-add-loan').forEach(btn => btn.addEventListener('click', (e) => { 
+      loanAmount += parseInt(e.target.dataset.val); 
+      amtInput.value = formatCurrency(loanAmount); 
+      calc(); 
+    }));
+    document.querySelectorAll('.btn-term-loan').forEach(btn => btn.addEventListener('click', (e) => { 
+      termInput.value = e.target.dataset.term; 
+      calc(); 
+    }));
+    document.querySelector('.btn-clear[data-target="loan"]').addEventListener('click', () => { 
+      loanAmount = 0; 
+      amtInput.value = ''; 
+      rateInput.value = ''; 
+      termInput.value = ''; 
+      resultArea.style.display = 'none'; 
+    });
   };
 
   // 2. 연봉 계산기
@@ -233,24 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
     amtInput.addEventListener('input', (e) => { savAmount = parseNum(e.target.value); e.target.value = savAmount ? formatCurrency(savAmount) : ''; calc(); });
     [termInput, rateInput].forEach(i => i.addEventListener('input', calc));
     document.querySelectorAll('input[name="sav-type"]').forEach(r => r.addEventListener('change', calc));
-  };
-
-  // 4. 주식 계산기
-  const initStock = () => {
-    const fields = ['stock-cur-price', 'stock-cur-qty', 'stock-add-price', 'stock-add-qty'];
-    const resultArea = document.getElementById('stock-result');
-    const calc = () => {
-      const cp = parseNum(document.getElementById('stock-cur-price').value);
-      const cq = parseNum(document.getElementById('stock-cur-qty').value);
-      const ap = parseNum(document.getElementById('stock-add-price').value);
-      const aq = parseNum(document.getElementById('stock-add-qty').value);
-      if (!cp || !cq || !ap || !aq) { resultArea.style.display = 'none'; return; }
-      const totalCost = (cp * cq) + (ap * aq);
-      const totalQty = cq + aq;
-      document.getElementById('stock-final-price').innerHTML = `${formatCurrency(totalCost / totalQty)} <span class="unit">원</span>`;
-      resultArea.style.display = 'block';
-    };
-    fields.forEach(id => document.getElementById(id).addEventListener('input', (e) => { e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : ''; calc(); }));
   };
 
   // 5. 세금 계산기 (정밀 로직)
@@ -405,5 +423,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  initLoan(); initSalary(); initSavings(); initStock(); initTax();
+  initLoan(); initSalary(); initSavings(); initTax();
 });
