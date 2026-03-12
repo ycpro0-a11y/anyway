@@ -378,6 +378,17 @@
           <!-- 4. 재산세 입력 (부동산) -->
           <div id="tax-input-prop" class="tax-form-group" style="display: none;">
             <div class="input-group">
+              <label>자산 종류</label>
+              <div class="radio-group">
+                <input type="radio" id="prop-type1" name="prop-asset-type" value="house" checked>
+                <label for="prop-type1">주택</label>
+                <input type="radio" id="prop-type2" name="prop-asset-type" value="building">
+                <label for="prop-type2">상가/건물</label>
+                <input type="radio" id="prop-type3" name="prop-asset-type" value="land">
+                <label for="prop-type3">토지</label>
+              </div>
+            </div>
+            <div class="input-group">
               <label for="prop-value">시가표준액 (공시가격, 원)</label>
               <div class="input-wrapper">
                 <input type="text" id="prop-value" placeholder="예: 500,000,000" inputmode="numeric">
@@ -389,13 +400,24 @@
           <!-- 5. 종부세 입력 (부동산) -->
           <div id="tax-input-comp" class="tax-form-group" style="display: none;">
             <div class="input-group">
-              <label for="comp-value">보유 주택 공시가격 합계 (원)</label>
+              <label>자산 종류</label>
+              <div class="radio-group">
+                <input type="radio" id="comp-asset1" name="comp-asset-type" value="house" checked>
+                <label for="comp-asset1">주택</label>
+                <input type="radio" id="comp-asset2" name="comp-asset-type" value="land_gen">
+                <label for="comp-asset2">종합토지</label>
+                <input type="radio" id="comp-asset3" name="comp-asset-type" value="land_special">
+                <label for="comp-asset3">별도토지</label>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="comp-value">공시가격 합계 (원)</label>
               <div class="input-wrapper">
                 <input type="text" id="comp-value" placeholder="예: 1,500,000,000" inputmode="numeric">
                 <span class="currency">원</span>
               </div>
             </div>
-            <div class="input-group">
+            <div id="comp-house-options" class="input-group">
               <label>공제 구분</label>
               <div class="radio-group">
                 <input type="radio" id="comp-t1" name="comp-type" value="1200000000" checked>
@@ -409,26 +431,44 @@
           <!-- 6. 양도세 입력 (부동산) -->
           <div id="tax-input-gain" class="tax-form-group" style="display: none;">
             <div class="input-group">
-              <label for="gain-buy">취득 가액 (산 가격, 원)</label>
+              <label>자산 종류</label>
+              <div class="radio-group">
+                <input type="radio" id="gain-asset1" name="gain-asset-type" value="house1" checked>
+                <label for="gain-asset1">1주택자</label>
+                <input type="radio" id="gain-asset2" name="gain-asset-type" value="house_multi">
+                <label for="gain-asset2">다주택자</label>
+                <input type="radio" id="gain-asset3" name="gain-asset-type" value="other">
+                <label for="gain-asset3">기타자산</label>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="gain-buy">취득 가액 (원)</label>
               <div class="input-wrapper">
                 <input type="text" id="gain-buy" placeholder="예: 400,000,000" inputmode="numeric">
                 <span class="currency">원</span>
               </div>
             </div>
             <div class="input-group">
-              <label for="gain-sell">양도 가액 (판 가격, 원)</label>
+              <label for="gain-sell">양도 가액 (원)</label>
               <div class="input-wrapper">
                 <input type="text" id="gain-sell" placeholder="예: 700,000,000" inputmode="numeric">
                 <span class="currency">원</span>
               </div>
             </div>
             <div class="input-group">
-              <label for="gain-term">보유 기간</label>
-              <select id="gain-term" class="select-field">
-                <option value="0.06">2년 이상 (기본세율)</option>
-                <option value="0.7">1년 미만 (70%)</option>
-                <option value="0.6">2년 미만 (60%)</option>
-              </select>
+              <label for="gain-hold-years">보유 기간 (년)</label>
+              <div class="input-wrapper">
+                <input type="number" id="gain-hold-years" placeholder="예: 5" min="0">
+                <span class="currency">년</span>
+              </div>
+            </div>
+            <div id="gain-live-option" class="input-group">
+              <label for="gain-live-years">거주 기간 (년)</label>
+              <div class="input-wrapper">
+                <input type="number" id="gain-live-years" placeholder="예: 2" min="0">
+                <span class="currency">년</span>
+              </div>
+              <p class="help-text">1주택자 비과세 및 장특공 우대세율 계산에 사용됩니다.</p>
             </div>
           </div>
 
