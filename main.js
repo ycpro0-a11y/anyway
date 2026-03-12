@@ -389,52 +389,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let tax = 0;
         let details = '';
-        let ratio = assetType === 'house' ? 0.6 : 0.7;
-        const taxBase = val * ratio;
+        let ratio = 0.7; // 기본 건축물/토지 70%
 
         if (assetType === 'house') {
-          const isH1 = document.querySelector('input[name="prop-h1"]:checked').value === 'yes' && val <= 900000000;
+          const isH1 = document.querySelector('input[name="prop-h1"]:checked').value === 'yes';
           
           if (isH1) {
+            // 1주택 특례 공정시장가액비율 (2026 기준 세분화)
+            if (val <= 300000000) ratio = 0.43;
+            else if (val <= 600000000) ratio = 0.44;
+            else ratio = 0.45;
+            
+            const taxBase = val * ratio;
             // 1주택 특례세율 (0.05% ~ 0.35%)
             if (taxBase <= 60000000) tax = taxBase * 0.0005;
             else if (taxBase <= 150000000) tax = 30000 + (taxBase - 60000000) * 0.001;
             else if (taxBase <= 300000000) tax = 120000 + (taxBase - 150000000) * 0.002;
             else tax = 420000 + (taxBase - 300000000) * 0.0035;
-            details = `<span>1주택자 특례세율 적용 (공정비율 60%)</span>`;
+            details = `<span>1주택자 특례 적용 (공정비율 ${(ratio * 100).toFixed(0)}%, 특례세율)</span>`;
           } else {
+            // 다주택자/법인 60%
+            ratio = 0.6;
+            const taxBase = val * ratio;
             // 일반세율 (0.1% ~ 0.4%)
             if (taxBase <= 60000000) tax = taxBase * 0.001;
             else if (taxBase <= 150000000) tax = 60000 + (taxBase - 60000000) * 0.0015;
             else if (taxBase <= 300000000) tax = 195000 + (taxBase - 150000000) * 0.0025;
             else tax = 570000 + (taxBase - 300000000) * 0.004;
-            details = `<span>일반 주택 세율 적용 (공정비율 60%)</span>`;
+            details = `<span>일반 주택 적용 (공정비율 60%, 일반세율)</span>`;
           }
-        } else if (assetType === 'building') {
-          tax = taxBase * 0.0025;
-          details = `<span>일반 건축물 세율 (0.25%, 공정비율 70%)</span>`;
-        } else if (assetType === 'land') {
-          const landType = document.getElementById('prop-land-type').value;
-          if (landType === 'gen') {
-            // 종합합산 (0.2% ~ 0.5%)
-            if (taxBase <= 50000000) tax = taxBase * 0.002;
-            else if (taxBase <= 100000000) tax = 100000 + (taxBase - 50000000) * 0.003;
-            else tax = 250000 + (taxBase - 100000000) * 0.005;
-            details = `<span>토지 종합합산 세율 (0.2~0.5%, 공정비율 70%)</span>`;
-          } else if (landType === 'sep') {
-            // 별도합산 (0.2% ~ 0.4%)
-            if (taxBase <= 200000000) tax = taxBase * 0.002;
-            else if (taxBase <= 1000000000) tax = 400000 + (taxBase - 200000000) * 0.003;
-            else tax = 2800000 + (taxBase - 1000000000) * 0.004;
-            details = `<span>토지 별도합산 세율 (0.2~0.4%, 공정비율 70%)</span>`;
-          } else {
-            // 분리과세 (전/답 0.07% 가정)
-            tax = taxBase * 0.0007;
-            details = `<span>토지 분리과세(농지 등) 세율 (0.07%, 공정비율 70%)</span>`;
+        } else {
+          ratio = 0.7;
+          const taxBase = val * ratio;
+          if (assetType === 'building') {
+            tax = taxBase * 0.0025;
+            details = `<span>일반 건축물 (공정비율 70%, 세율 0.25%)</span>`;
+          } else if (assetType === 'land') {
+            const landType = document.getElementById('prop-land-type').value;
+            if (landType === 'gen') {
+              if (taxBase <= 50000000) tax = taxBase * 0.002;
+              else if (taxBase <= 100000000) tax = 100000 + (taxBase - 50000000) * 0.003;
+              else tax = 250000 + (taxBase - 100000000) * 0.005;
+              details = `<span>토지 종합합산 (공정비율 70%, 0.2~0.5%)</span>`;
+            } else if (landType === 'sep') {
+              if (taxBase <= 200000000) tax = taxBase * 0.002;
+              else if (taxBase <= 1000000000) tax = 400000 + (taxBase - 200000000) * 0.003;
+              else tax = 2800000 + (taxBase - 1000000000) * 0.004;
+              details = `<span>토지 별도합산 (공정비율 70%, 0.2~0.4%)</span>`;
+            } else {
+              tax = taxBase * 0.0007;
+              details = `<span>토지 분리과세 (공정비율 70%, 0.07%)</span>`;
+            }
           }
         }
 
-        // 재산세 총액 = 산출세액 + 지방교육세(20%) + 재산세 도시지역분(0.14% 가정)
+        // 공통 부가세 계산 (도시지역분 0.14%는 과표 기준)
         const eduTax = tax * 0.2;
         const cityTax = val * ratio * 0.0014;
         const totalPropTax = tax + eduTax + cityTax;
