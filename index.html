@@ -204,6 +204,16 @@
           <!-- 5. 종부세 -->
           <div id="tax-input-comp" class="tax-form-group" style="display: none;">
             <div class="input-group">
+              <label>납세자 구분</label>
+              <div class="radio-group">
+                <input type="radio" id="comp-owner-ind" name="comp-owner" value="ind" checked>
+                <label for="comp-owner-ind">개인</label>
+                <input type="radio" id="comp-owner-corp" name="comp-owner" value="corp">
+                <label for="comp-owner-corp">법인</label>
+              </div>
+            </div>
+
+            <div class="input-group">
               <label for="comp-asset-type">과세 대상 구분</label>
               <select id="comp-asset-type" class="select-field">
                 <option value="house" selected>주택 (분분/전체 합산)</option>
@@ -222,27 +232,53 @@
 
             <!-- 주택 전용 옵션 -->
             <div id="comp-house-option">
-              <div class="input-group">
-                <label>공제 유형 및 주택 수</label>
-                <div class="radio-group">
-                  <input type="radio" id="comp-t1" name="comp-type" value="1200000000" checked>
-                  <label for="comp-t1">1주택(12억)</label>
-                  <input type="radio" id="comp-t2" name="comp-type" value="900000000">
-                  <label for="comp-t2">다주택(9억)</label>
+              <!-- 개인용 옵션 -->
+              <div id="comp-ind-house-option">
+                <div class="input-group">
+                  <label>공제 유형 및 주택 수</label>
+                  <div class="radio-group">
+                    <input type="radio" id="comp-t1" name="comp-type" value="1200000000" checked>
+                    <label for="comp-t1">1주택(12억)</label>
+                    <input type="radio" id="comp-t2" name="comp-type" value="900000000">
+                    <label for="comp-t2">다주택(9억)</label>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label>3주택 이상 여부 (중과)</label>
+                  <div class="radio-group">
+                    <input type="radio" id="comp-multi-no" name="comp-multi" value="no" checked>
+                    <label for="comp-multi-no">2주택 이하</label>
+                    <input type="radio" id="comp-multi-yes" name="comp-multi" value="yes">
+                    <label for="comp-multi-yes">3주택 이상</label>
+                  </div>
                 </div>
               </div>
-              <div class="input-group">
-                <label>3주택 이상 여부 (중과)</label>
-                <div class="radio-group">
-                  <input type="radio" id="comp-multi-no" name="comp-multi" value="no" checked>
-                  <label for="comp-multi-no">2주택 이하</label>
-                  <input type="radio" id="comp-multi-yes" name="comp-multi" value="yes">
-                  <label for="comp-multi-yes">3주택 이상</label>
+
+              <!-- 법인용 옵션 -->
+              <div id="comp-corp-house-option" style="display: none;">
+                <div class="input-group">
+                  <label>법인 보유 주택 수</label>
+                  <div class="radio-group">
+                    <input type="radio" id="comp-corp-h2" name="comp-corp-multi" value="no" checked>
+                    <label for="comp-corp-h2">2주택 이하</label>
+                    <input type="radio" id="comp-corp-h3" name="comp-corp-multi" value="yes">
+                    <label for="comp-corp-h3">3주택 이상</label>
+                  </div>
                 </div>
-                <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
-                  * 3주택 이상이며 과표 12억 초과 시 0.5%~5.0% 중과세율이 적용됩니다.
-                </p>
+                <div class="input-group">
+                  <label>특례 적용 법인 (9억 공제)</label>
+                  <div class="radio-group">
+                    <input type="radio" id="comp-corp-sp-no" name="comp-corp-sp" value="no" checked>
+                    <label for="comp-corp-sp-no">일반법인</label>
+                    <input type="radio" id="comp-corp-sp-yes" name="comp-corp-sp" value="yes">
+                    <label for="comp-corp-sp-yes">특례법인</label>
+                  </div>
+                  <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
+                    * 공공주택사업자, 사회적기업 등은 개인(다주택)과 동일한 혜택 적용.
+                  </p>
+                </div>
               </div>
+
               <div class="input-group">
                 <label>임대사업자 합산배제 여부</label>
                 <div class="radio-group">
