@@ -8,7 +8,6 @@ class AdPlaceholder extends HTMLElement {
     const width = this.getAttribute('width') || '100%';
     const height = this.getAttribute('height') || '80px';
     const text = this.getAttribute('text') || 'Advertisement';
-
     this.shadowRoot.innerHTML = `
       <style>
         .ad-container {
@@ -24,7 +23,7 @@ class AdPlaceholder extends HTMLElement {
 }
 customElements.define('ad-placeholder', AdPlaceholder);
 
-// 공통 유틸리티 (순수 자체 개발 로직)
+// 공통 유틸리티
 const formatCurrency = (num) => Math.round(num).toLocaleString('ko-KR');
 const parseNum = (str) => {
   if (typeof str !== 'string') return parseInt(str, 10) || 0;
@@ -33,9 +32,7 @@ const parseNum = (str) => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ==========================================
-  // SPA 탭 네비게이션
-  // ==========================================
+  // SPA 네비게이션
   const navItems = document.querySelectorAll('.nav-item');
   const sections = document.querySelectorAll('.calc-section');
   const headerTitle = document.getElementById('header-title');
@@ -46,34 +43,28 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       navItems.forEach(nav => nav.classList.remove('active'));
       item.classList.add('active');
-      const targetId = item.getAttribute('data-tab');
       sections.forEach(sec => sec.classList.remove('active'));
-      document.getElementById(targetId).classList.add('active');
+      document.getElementById(item.getAttribute('data-tab')).classList.add('active');
       headerTitle.textContent = item.getAttribute('data-title');
       headerDesc.textContent = item.getAttribute('data-desc');
       window.scrollTo(0, 0);
     });
   });
 
-  // ==========================================
-  // 1. 대출 이자 계산기
-  // ==========================================
+  // 1. 대출 계산기
   let loanAmount = 0;
   const initLoan = () => {
     const amtInput = document.getElementById('loan-amount');
     const rateInput = document.getElementById('loan-rate');
     const termInput = document.getElementById('loan-term');
     const resultArea = document.getElementById('loan-result');
-    
     const calc = () => {
       const rate = parseFloat(rateInput.value);
       const months = parseInt(termInput.value, 10);
       const type = document.querySelector('input[name="loan-type"]:checked').value;
       if (!loanAmount || !rate || !months) { resultArea.style.display = 'none'; return; }
-      
       const monthlyRate = (rate / 100) / 12;
       let monthlyPayment = 0, totalInterest = 0;
-
       if (type === 'equal_principal_interest') {
         const p = Math.pow(1 + monthlyRate, months);
         monthlyPayment = loanAmount * monthlyRate * p / (p - 1);
@@ -81,18 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (type === 'equal_principal') {
         const principalPerMonth = loanAmount / months;
         for (let i = 0; i < months; i++) totalInterest += (loanAmount - (principalPerMonth * i)) * monthlyRate;
-        monthlyPayment = principalPerMonth + (loanAmount * monthlyRate); // 첫 달 기준
+        monthlyPayment = principalPerMonth + (loanAmount * monthlyRate);
       } else {
-        monthlyPayment = loanAmount * monthlyRate;
-        totalInterest = monthlyPayment * months;
+        monthlyPayment = loanAmount * monthlyRate; totalInterest = monthlyPayment * months;
       }
-
       document.getElementById('loan-monthly-payment').innerHTML = `${formatCurrency(monthlyPayment)} <span class="unit">원</span>`;
       document.getElementById('loan-total-interest').textContent = `${formatCurrency(totalInterest)} 원`;
       document.getElementById('loan-total-repayment').textContent = `${formatCurrency(loanAmount + totalInterest)} 원`;
       resultArea.style.display = 'block';
     };
-
     amtInput.addEventListener('input', (e) => { loanAmount = parseNum(e.target.value); e.target.value = loanAmount ? formatCurrency(loanAmount) : ''; calc(); });
     [rateInput, termInput].forEach(i => i.addEventListener('input', calc));
     document.querySelectorAll('input[name="loan-type"]').forEach(r => r.addEventListener('change', calc));
@@ -101,9 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.btn-clear[data-target="loan"]').addEventListener('click', () => { loanAmount = 0; amtInput.value = ''; rateInput.value = ''; termInput.value = ''; resultArea.style.display = 'none'; });
   };
 
-  // ==========================================
-  // 2. 연봉 실수령액 계산기
-  // ==========================================
+  // 2. 연봉 계산기
   let salaryAmount = 0;
   const initSalary = () => {
     const amtInput = document.getElementById('salary-amount');
@@ -114,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const monthly = Math.floor(salaryAmount / 12);
       const taxfree = parseNum(taxfreeInput.value);
       const taxable = Math.max(0, monthly - taxfree);
-      // 간이 계산 로직 (2024년 기준 대략적 보험료율 적용)
       const pension = Math.min(taxable * 0.045, 265500);
       const health = taxable * 0.03545;
       const care = health * 0.1295;
@@ -130,9 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.btn-clear[data-target="salary"]').addEventListener('click', () => { salaryAmount = 0; amtInput.value = ''; resultArea.style.display = 'none'; });
   };
 
-  // ==========================================
   // 3. 예적금 계산기
-  // ==========================================
   let savAmount = 0;
   const initSavings = () => {
     const amtInput = document.getElementById('sav-amount');
@@ -147,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let interest = 0;
       if (type === 'installment') interest = savAmount * (rate/100/12) * (months * (months + 1) / 2);
       else interest = savAmount * (rate/100) * (months / 12);
-      const afterTax = interest * 0.846; // 일반과세 15.4% 제외
+      const afterTax = interest * 0.846;
       document.getElementById('sav-total-receive').innerHTML = `${formatCurrency((type === 'installment' ? savAmount * months : savAmount) + afterTax)} <span class="unit">원</span>`;
       resultArea.style.display = 'block';
     };
@@ -156,9 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[name="sav-type"]').forEach(r => r.addEventListener('change', calc));
   };
 
-  // ==========================================
-  // 4. 주식 평단가 계산기
-  // ==========================================
+  // 4. 주식 계산기
   const initStock = () => {
     const fields = ['stock-cur-price', 'stock-cur-qty', 'stock-add-price', 'stock-add-qty'];
     const resultArea = document.getElementById('stock-result');
@@ -176,9 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fields.forEach(id => document.getElementById(id).addEventListener('input', (e) => { e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : ''; calc(); }));
   };
 
-  // ==========================================
-  // 5. 종합 세금 계산기 (증여/상속 취득세 포함)
-  // ==========================================
+  // 5. 세금 계산기 (정밀 로직)
   const initTax = () => {
     const categorySelect = document.getElementById('tax-category-select');
     const resultArea = document.getElementById('tax-result');
@@ -186,67 +165,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailsEl = document.getElementById('tax-result-details');
     const resultLabelEl = document.getElementById('tax-result-label');
 
-    const handleCategoryChange = () => {
-      const selected = categorySelect.value;
-      document.querySelectorAll('.tax-form-group').forEach(g => g.style.display = g.id === `tax-input-${selected}` ? 'block' : 'none');
-      calc();
-    };
-    categorySelect.addEventListener('change', handleCategoryChange);
-
-    const calcVat = () => {
-      const val = parseNum(document.getElementById('vat-amount').value);
-      if (!val) return null;
-      return { label: '부가가치세액', main: Math.floor(val / 11), details: `<div class="row"><span>공급가액</span><span>${formatCurrency(val - Math.floor(val/11))} 원</span></div>` };
-    };
-
-    const calcGift = () => {
-      const total = parseNum(document.getElementById('gift-amount').value);
-      const prop = parseNum(document.getElementById('gift-prop-amount').value);
-      if (!total) return null;
-      const deduct = parseInt(document.getElementById('gift-relation').value);
-      const base = Math.max(0, total - deduct);
-      let tax = 0;
-      if (base <= 100000000) tax = base * 0.1;
-      else if (base <= 500000000) tax = base * 0.2 - 10000000;
-      else if (base <= 1000000000) tax = base * 0.3 - 60000000;
-      else if (base <= 3000000000) tax = base * 0.4 - 160000000;
-      else tax = base * 0.5 - 460000000;
-      const giftTax = tax * 0.97; // 신고세액공제 3%
-      const acqTax = prop * 0.04; // 증여 취득세율 대략 4% (지방교육세 등 포함)
-      return { label: '총 납부 세액 (증여+취득)', main: giftTax + acqTax, details: `
-        <div class="row"><span>증여세(국세)</span><span>${formatCurrency(giftTax)} 원</span></div>
-        <div class="row"><span>증여취득세(지방세)</span><span>${formatCurrency(acqTax)} 원</span></div>
-      ` };
-    };
-
-    const calcInherit = () => {
-      const total = parseNum(document.getElementById('inherit-amount').value);
-      const prop = parseNum(document.getElementById('inherit-prop-amount').value);
-      if (!total) return null;
-      const family = document.querySelector('input[name="inherit-family"]:checked').value;
-      let deduct = 500000000;
-      if (family === 'both') deduct = 1000000000;
-      else if (family === 'spouse') deduct = 700000000;
-      const base = Math.max(0, total - deduct);
-      let tax = 0;
-      if (base <= 100000000) tax = base * 0.1;
-      else if (base <= 500000000) tax = base * 0.2 - 10000000;
-      else tax = base * 0.3 - 60000000; // 단순화
-      const inheritTax = tax * 0.97;
-      const acqTax = prop * 0.0316; // 상속 취득세율 대략 3.16%
-      return { label: '총 납부 세액 (상속+취득)', main: inheritTax + acqTax, details: `
-        <div class="row"><span>상속세(국세)</span><span>${formatCurrency(inheritTax)} 원</span></div>
-        <div class="row"><span>상속취득세(지방세)</span><span>${formatCurrency(acqTax)} 원</span></div>
-      ` };
+    const getTax = (base) => {
+      if (base <= 100000000) return base * 0.1;
+      if (base <= 500000000) return base * 0.2 - 10000000;
+      if (base <= 1000000000) return base * 0.3 - 60000000;
+      if (base <= 3000000000) return base * 0.4 - 160000000;
+      return base * 0.5 - 460000000;
     };
 
     const calc = () => {
       const type = categorySelect.value;
       let res = null;
-      if (type === 'vat') res = calcVat();
-      else if (type === 'gift') res = calcGift();
-      else if (type === 'inherit') res = calcInherit();
-      // ... 기타 부동산 세금 생략 (유사 로직)
+
+      if (type === 'gift') {
+        const total = parseNum(document.getElementById('gift-amount').value);
+        const prop = parseNum(document.getElementById('gift-prop-amount').value);
+        const children = parseInt(document.getElementById('gift-children').value);
+        const deduct = parseInt(document.getElementById('gift-relation').value);
+        if (!total) { resultArea.style.display = 'none'; return; }
+        
+        const perPerson = total / children;
+        const perTaxBase = Math.max(0, perPerson - deduct);
+        const perTax = getTax(perTaxBase) * 0.97;
+        const totalGiftTax = perTax * children;
+        const acqTax = prop * 0.04;
+        res = { label: '총 납부 세액 (증여+취득)', main: totalGiftTax + acqTax, details: `
+          <div class="row"><span>증여세 (인당)</span><span>${formatCurrency(perTax)} 원</span></div>
+          <div class="row"><span>증여세 (총합)</span><span>${formatCurrency(totalGiftTax)} 원</span></div>
+          <div class="row"><span>증여취득세(지방세)</span><span>${formatCurrency(acqTax)} 원</span></div>` };
+      } else if (type === 'inherit') {
+        const total = parseNum(document.getElementById('inherit-amount').value);
+        const prop = parseNum(document.getElementById('inherit-prop-amount').value);
+        const family = document.querySelector('input[name="inherit-family"]:checked').value;
+        const childCount = parseInt(document.getElementById('inherit-children-count').value);
+        if (!total) { resultArea.style.display = 'none'; return; }
+        
+        let deduct = 500000000;
+        if (family === 'both') deduct = 1000000000;
+        else if (family === 'spouse') deduct = 700000000;
+        const base = Math.max(0, total - deduct);
+        const totalInheritTax = getTax(base) * 0.97;
+        const acqTax = prop * 0.0316;
+        res = { label: '총 상속 관련 세액', main: totalInheritTax + acqTax, details: `
+          <div class="row"><span>총 상속세액</span><span>${formatCurrency(totalInheritTax)} 원</span></div>
+          <div class="row"><span>자녀 인당 배분액</span><span>${formatCurrency(totalInheritTax / (family === 'spouse' ? 1 : childCount + (family === 'both' ? 1.5 : 0)))} 원</span></div>
+          <div class="row"><span>상속취득세(지방세)</span><span>${formatCurrency(acqTax)} 원</span></div>` };
+      } else if (type === 'acq') {
+        const val = parseNum(document.getElementById('acq-amount').value);
+        const count = parseInt(document.querySelector('input[name="acq-house"]:checked').value);
+        if (!val) { resultArea.style.display = 'none'; return; }
+        let rate = val <= 600000000 ? 0.01 : (val <= 900000000 ? (val*(2/300000000)-3)/100 : 0.03);
+        if (count === 2) rate = 0.08; else if (count >= 3) rate = 0.12;
+        res = { label: '취득세 합계', main: val * rate * 1.1, details: `<div class="row"><span>적용세율</span><span>${(rate*100).toFixed(1)}%</span></div>` };
+      } else if (type === 'prop') {
+        const val = parseNum(document.getElementById('prop-value').value);
+        if (!val) { resultArea.style.display = 'none'; return; }
+        const base = val * 0.6;
+        let tax = base <= 60000000 ? base*0.001 : (base <= 150000000 ? 60000+(base-60000000)*0.0015 : 195000+(base-150000000)*0.0025);
+        res = { label: '재산세(추정)', main: tax, details: `<span>과세표준: ${formatCurrency(base)} 원</span>` };
+      } else if (type === 'comp') {
+        const val = parseNum(document.getElementById('comp-value').value);
+        if (!val) { resultArea.style.display = 'none'; return; }
+        const base = Math.max(0, (val - 900000000) * 0.6);
+        res = { label: '종합부동산세(추정)', main: base * 0.01, details: `<span>공제 후 과표: ${formatCurrency(base)} 원</span>` };
+      } else if (type === 'gain') {
+        const buy = parseNum(document.getElementById('gain-buy').value), sell = parseNum(document.getElementById('gain-sell').value);
+        if (!buy || !sell) { resultArea.style.display = 'none'; return; }
+        const profit = Math.max(0, sell - buy - 2500000);
+        res = { label: '양도소득세(추정)', main: profit * 0.24 - 5760000, details: `<span>양도차익: ${formatCurrency(sell-buy)} 원</span>` };
+      } else if (type === 'vat') {
+        const val = parseNum(document.getElementById('vat-amount').value);
+        if (!val) { resultArea.style.display = 'none'; return; }
+        res = { label: '부가가치세액', main: Math.floor(val / 11), details: `<span>공급가액: ${formatCurrency(val - Math.floor(val/11))} 원</span>` };
+      }
 
       if (res) {
         resultLabelEl.textContent = res.label;
@@ -256,6 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
       } else { resultArea.style.display = 'none'; }
     };
 
+    categorySelect.addEventListener('change', () => {
+      document.querySelectorAll('.tax-form-group').forEach(g => g.style.display = g.id === `tax-input-${categorySelect.value}` ? 'block' : 'none');
+      calc();
+    });
     document.querySelectorAll('#calc-tax input, #calc-tax select').forEach(el => {
       el.addEventListener('input', (e) => {
         if (e.target.type === 'text') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
