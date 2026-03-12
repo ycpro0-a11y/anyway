@@ -301,6 +301,7 @@
               <optgroup label="생활 세금">
                 <option value="vat">부가가치세 (VAT)</option>
                 <option value="gift">증여세</option>
+                <option value="inherit">상속세</option>
               </optgroup>
               <optgroup label="부동산 세금">
                 <option value="acq">취득세 (매수 시)</option>
@@ -478,6 +479,29 @@
                 <span class="currency">년</span>
               </div>
               <p class="help-text">1주택자 비과세 및 장특공 우대세율 계산에 사용됩니다.</p>
+            </div>
+          </div>
+
+          <!-- 7. 상속세 입력 -->
+          <div id="tax-input-inherit" class="tax-form-group" style="display: none;">
+            <div class="input-group">
+              <label for="inherit-amount">총 상속재산 가액 (원)</label>
+              <div class="input-wrapper">
+                <input type="text" id="inherit-amount" placeholder="예: 1,500,000,000" inputmode="numeric">
+                <span class="currency">원</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>상속인 구성</label>
+              <div class="radio-group">
+                <input type="radio" id="inherit-family1" name="inherit-family" value="both" checked>
+                <label for="inherit-family1">배우자+자녀</label>
+                <input type="radio" id="inherit-family2" name="inherit-family" value="child">
+                <label for="inherit-family2">자녀만</label>
+                <input type="radio" id="inherit-family3" name="inherit-family" value="spouse">
+                <label for="inherit-family3">배우자만</label>
+              </div>
+              <p class="help-text">배우자 상속공제는 최소 5억원(법정상속분 한도)으로 단순 가정합니다.</p>
             </div>
           </div>
 
