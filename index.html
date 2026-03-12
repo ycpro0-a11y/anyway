@@ -18,207 +18,16 @@
 <body>
   <div class="app-container">
     <header class="app-header">
-      <h1 id="header-title">스마트 대출 계산기</h1>
-      <p id="header-desc">최신 세법 및 금융 알고리즘을 통한 정확한 시뮬레이션</p>
+      <h1 id="header-title">종합 세금 정밀 분석</h1>
+      <p id="header-desc">부동산, 증여, 상속 등 7종 세금 분석</p>
     </header>
 
     <ad-placeholder width="100%" height="70px" text="[광고] Google AdSense Unit 1"></ad-placeholder>
 
     <main class="calculator-card">
       
-      <!-- 1. 대출 이자 계산기 -->
-      <section id="calc-loan" class="calc-section active">
-        <form>
-          <div class="input-group">
-            <label for="loan-amount">대출 원금 (원)</label>
-            <div class="input-wrapper">
-              <input type="text" id="loan-amount" placeholder="예: 50,000,000" inputmode="numeric">
-              <span class="currency">원</span>
-            </div>
-            <div class="quick-add">
-              <button type="button" class="btn-add-loan" data-val="1000000">+100만</button>
-              <button type="button" class="btn-add-loan" data-val="10000000">+1000만</button>
-              <button type="button" class="btn-add-loan" data-val="50000000">+5000만</button>
-              <button type="button" class="btn-clear" data-target="loan">초기화</button>
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label for="loan-rate">연간 이자율 (%)</label>
-            <div class="input-wrapper">
-              <input type="number" id="loan-rate" placeholder="예: 4.5" step="0.01" inputmode="decimal">
-              <span class="currency">%</span>
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label for="loan-term">대출 기간 (개월)</label>
-            <div class="input-wrapper">
-              <input type="number" id="loan-term" placeholder="예: 60" inputmode="numeric">
-              <span class="currency">개월</span>
-            </div>
-            <div class="quick-add">
-              <button type="button" class="btn-term-loan" data-term="12">1년</button>
-              <button type="button" class="btn-term-loan" data-term="24">2년</button>
-              <button type="button" class="btn-term-loan" data-term="36">3년</button>
-              <button type="button" class="btn-term-loan" data-term="60">5년</button>
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label>상환 방식 선택</label>
-            <div class="radio-group">
-              <input type="radio" id="type1" name="loan-type" value="equal_principal_interest" checked>
-              <label for="type1">원리금균등</label>
-              <input type="radio" id="type2" name="loan-type" value="equal_principal">
-              <label for="type2">원금균등</label>
-              <input type="radio" id="type3" name="loan-type" value="bullet">
-              <label for="type3">만기일시</label>
-            </div>
-          </div>
-        </form>
-
-        <section class="result-area" id="loan-result" style="display: none;">
-          <h2>대출 상환 분석 결과</h2>
-          <div class="result-box primary">
-            <span class="result-label" id="loan-monthly-label">월평균 상환액</span>
-            <strong class="result-value highlight" id="loan-monthly-payment">0 <span class="unit">원</span></strong>
-          </div>
-          <div class="result-box secondary">
-            <div class="row">
-              <span class="result-label">총 대출 이자</span>
-              <span class="result-value" id="loan-total-interest">0 원</span>
-            </div>
-            <div class="row">
-              <span class="result-label">원리금 합계</span>
-              <span class="result-value" id="loan-total-repayment">0 원</span>
-            </div>
-          </div>
-        </section>
-      </section>
-
-      <!-- 2. 연봉 실수령액 계산기 -->
-      <section id="calc-salary" class="calc-section">
-        <form>
-          <div class="input-group">
-            <label for="salary-amount">연봉 총액 (원)</label>
-            <div class="input-wrapper">
-              <input type="text" id="salary-amount" placeholder="예: 40,000,000" inputmode="numeric">
-              <span class="currency">원</span>
-            </div>
-            <div class="quick-add">
-              <button type="button" class="btn-add-salary" data-val="30000000">3000만</button>
-              <button type="button" class="btn-add-salary" data-val="40000000">4000만</button>
-              <button type="button" class="btn-add-salary" data-val="50000000">5000만</button>
-              <button type="button" class="btn-clear" data-target="salary">초기화</button>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>월 비과세액 (기본 20만원)</label>
-            <div class="input-wrapper">
-              <input type="text" id="salary-taxfree" value="200,000" inputmode="numeric">
-              <span class="currency">원</span>
-            </div>
-          </div>
-        </form>
-
-        <section class="result-area" id="salary-result" style="display: none;">
-          <h2>월 실수령액 시뮬레이션</h2>
-          <div class="result-box primary">
-            <span class="result-label">예상 월 실수령액</span>
-            <strong class="result-value highlight" id="salary-monthly">0 <span class="unit">원</span></strong>
-          </div>
-          <div class="result-box secondary">
-            <div class="row">
-              <span class="result-label">공제 합계 (4대보험+세금)</span>
-              <span class="result-value" id="tax-total">0 원</span>
-            </div>
-          </div>
-        </section>
-      </section>
-
-      <!-- 3. 예적금 계산기 -->
-      <section id="calc-savings" class="calc-section">
-        <form>
-          <div class="input-group">
-            <label>상품 선택</label>
-            <div class="radio-group">
-              <input type="radio" id="sav-type1" name="sav-type" value="installment" checked>
-              <label for="sav-type1">적금 (매월)</label>
-              <input type="radio" id="sav-type2" name="sav-type" value="deposit">
-              <label for="sav-type2">예금 (목돈)</label>
-            </div>
-          </div>
-          <div class="input-group">
-            <label id="sav-amount-label" for="sav-amount">월 납입액 (원)</label>
-            <div class="input-wrapper">
-              <input type="text" id="sav-amount" placeholder="예: 1,000,000" inputmode="numeric">
-              <span class="currency">원</span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label for="sav-term">가입 기간 (개월)</label>
-            <div class="input-wrapper">
-              <input type="number" id="sav-term" placeholder="예: 12" inputmode="numeric">
-              <span class="currency">개월</span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label for="sav-rate">연 이자율 (%)</label>
-            <div class="input-wrapper">
-              <input type="number" id="sav-rate" placeholder="예: 3.5" step="0.01" inputmode="decimal">
-              <span class="currency">%</span>
-            </div>
-          </div>
-        </form>
-
-        <section class="result-area" id="sav-result" style="display: none;">
-          <h2>만기 수령액 분석</h2>
-          <div class="result-box primary" style="background-color: #00C896;">
-            <span class="result-label">세후 최종 수령액</span>
-            <strong class="result-value highlight" id="sav-total-receive">0 <span class="unit">원</span></strong>
-          </div>
-        </section>
-      </section>
-
-      <!-- 4. 주식 평단가 계산기 -->
-      <section id="calc-stock" class="calc-section">
-        <form>
-          <div class="input-group">
-            <label>보유 주식 단가 / 수량</label>
-            <div class="input-wrapper" style="margin-bottom: 8px;">
-              <input type="text" id="stock-cur-price" placeholder="평균 단가 (원)">
-              <span class="currency">원</span>
-            </div>
-            <div class="input-wrapper">
-              <input type="text" id="stock-cur-qty" placeholder="보유 수량 (주)">
-              <span class="currency">주</span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>추가 매수 단가 / 수량</label>
-            <div class="input-wrapper" style="margin-bottom: 8px;">
-              <input type="text" id="stock-add-price" placeholder="매수 가액 (원)">
-              <span class="currency">원</span>
-            </div>
-            <div class="input-wrapper">
-              <input type="text" id="stock-add-qty" placeholder="추가 수량 (주)">
-              <span class="currency">주</span>
-            </div>
-          </div>
-        </form>
-
-        <section class="result-area" id="stock-result" style="display: none;">
-          <h2>물타기 평단가 결과</h2>
-          <div class="result-box primary" style="background-color: #F04452;">
-            <span class="result-label">수정된 평균 단가</span>
-            <strong class="result-value highlight" id="stock-final-price">0 <span class="unit">원</span></strong>
-          </div>
-        </section>
-      </section>
-
-      <!-- 5. 종합 세금 계산기 -->
-      <section id="calc-tax" class="calc-section">
+      <!-- 5. 종합 세금 계산기 (제일 앞단으로 이동) -->
+      <section id="calc-tax" class="calc-section active">
         <form>
           <div class="input-group">
             <label for="tax-category-select">정밀 세액 계산 항목</label>
@@ -460,6 +269,197 @@
         </section>
       </section>
 
+      <!-- 1. 대출 이자 계산기 -->
+      <section id="calc-loan" class="calc-section">
+        <form>
+          <div class="input-group">
+            <label for="loan-amount">대출 원금 (원)</label>
+            <div class="input-wrapper">
+              <input type="text" id="loan-amount" placeholder="예: 50,000,000" inputmode="numeric">
+              <span class="currency">원</span>
+            </div>
+            <div class="quick-add">
+              <button type="button" class="btn-add-loan" data-val="1000000">+100만</button>
+              <button type="button" class="btn-add-loan" data-val="10000000">+1000만</button>
+              <button type="button" class="btn-add-loan" data-val="50000000">+5000만</button>
+              <button type="button" class="btn-clear" data-target="loan">초기화</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="loan-rate">연간 이자율 (%)</label>
+            <div class="input-wrapper">
+              <input type="number" id="loan-rate" placeholder="예: 4.5" step="0.01" inputmode="decimal">
+              <span class="currency">%</span>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="loan-term">대출 기간 (개월)</label>
+            <div class="input-wrapper">
+              <input type="number" id="loan-term" placeholder="예: 60" inputmode="numeric">
+              <span class="currency">개월</span>
+            </div>
+            <div class="quick-add">
+              <button type="button" class="btn-term-loan" data-term="12">1년</button>
+              <button type="button" class="btn-term-loan" data-term="24">2년</button>
+              <button type="button" class="btn-term-loan" data-term="36">3년</button>
+              <button type="button" class="btn-term-loan" data-term="60">5년</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>상환 방식 선택</label>
+            <div class="radio-group">
+              <input type="radio" id="type1" name="loan-type" value="equal_principal_interest" checked>
+              <label for="type1">원리금균등</label>
+              <input type="radio" id="type2" name="loan-type" value="equal_principal">
+              <label for="type2">원금균등</label>
+              <input type="radio" id="type3" name="loan-type" value="bullet">
+              <label for="type3">만기일시</label>
+            </div>
+          </div>
+        </form>
+
+        <section class="result-area" id="loan-result" style="display: none;">
+          <h2>대출 상환 분석 결과</h2>
+          <div class="result-box primary">
+            <span class="result-label" id="loan-monthly-label">월평균 상환액</span>
+            <strong class="result-value highlight" id="loan-monthly-payment">0 <span class="unit">원</span></strong>
+          </div>
+          <div class="result-box secondary">
+            <div class="row">
+              <span class="result-label">총 대출 이자</span>
+              <span class="result-value" id="loan-total-interest">0 원</span>
+            </div>
+            <div class="row">
+              <span class="result-label">원리금 합계</span>
+              <span class="result-value" id="loan-total-repayment">0 원</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- 2. 연봉 실수령액 계산기 -->
+      <section id="calc-salary" class="calc-section">
+        <form>
+          <div class="input-group">
+            <label for="salary-amount">연봉 총액 (원)</label>
+            <div class="input-wrapper">
+              <input type="text" id="salary-amount" placeholder="예: 40,000,000" inputmode="numeric">
+              <span class="currency">원</span>
+            </div>
+            <div class="quick-add">
+              <button type="button" class="btn-add-salary" data-val="30000000">3000만</button>
+              <button type="button" class="btn-add-salary" data-val="40000000">4000만</button>
+              <button type="button" class="btn-add-salary" data-val="50000000">5000만</button>
+              <button type="button" class="btn-clear" data-target="salary">초기화</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>월 비과세액 (기본 20만원)</label>
+            <div class="input-wrapper">
+              <input type="text" id="salary-taxfree" value="200,000" inputmode="numeric">
+              <span class="currency">원</span>
+            </div>
+          </div>
+        </form>
+
+        <section class="result-area" id="salary-result" style="display: none;">
+          <h2>월 실수령액 시뮬레이션</h2>
+          <div class="result-box primary">
+            <span class="result-label">예상 월 실수령액</span>
+            <strong class="result-value highlight" id="salary-monthly">0 <span class="unit">원</span></strong>
+          </div>
+          <div class="result-box secondary">
+            <div class="row">
+              <span class="result-label">공제 합계 (4대보험+세금)</span>
+              <span class="result-value" id="tax-total">0 원</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- 3. 예적금 계산기 -->
+      <section id="calc-savings" class="calc-section">
+        <form>
+          <div class="input-group">
+            <label>상품 선택</label>
+            <div class="radio-group">
+              <input type="radio" id="sav-type1" name="sav-type" value="installment" checked>
+              <label for="sav-type1">적금 (매월)</label>
+              <input type="radio" id="sav-type2" name="sav-type" value="deposit">
+              <label for="sav-type2">예금 (목돈)</label>
+            </div>
+          </div>
+          <div class="input-group">
+            <label id="sav-amount-label" for="sav-amount">월 납입액 (원)</label>
+            <div class="input-wrapper">
+              <input type="text" id="sav-amount" placeholder="예: 1,000,000" inputmode="numeric">
+              <span class="currency">원</span>
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="sav-term">가입 기간 (개월)</label>
+            <div class="input-wrapper">
+              <input type="number" id="sav-term" placeholder="예: 12" inputmode="numeric">
+              <span class="currency">개월</span>
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="sav-rate">연 이자율 (%)</label>
+            <div class="input-wrapper">
+              <input type="number" id="sav-rate" placeholder="예: 3.5" step="0.01" inputmode="decimal">
+              <span class="currency">%</span>
+            </div>
+          </div>
+        </form>
+
+        <section class="result-area" id="sav-result" style="display: none;">
+          <h2>만기 수령액 분석</h2>
+          <div class="result-box primary" style="background-color: #00C896;">
+            <span class="result-label">세후 최종 수령액</span>
+            <strong class="result-value highlight" id="sav-total-receive">0 <span class="unit">원</span></strong>
+          </div>
+        </section>
+      </section>
+
+      <!-- 4. 주식 평단가 계산기 -->
+      <section id="calc-stock" class="calc-section">
+        <form>
+          <div class="input-group">
+            <label>보유 주식 단가 / 수량</label>
+            <div class="input-wrapper" style="margin-bottom: 8px;">
+              <input type="text" id="stock-cur-price" placeholder="평균 단가 (원)">
+              <span class="currency">원</span>
+            </div>
+            <div class="input-wrapper">
+              <input type="text" id="stock-cur-qty" placeholder="보유 수량 (주)">
+              <span class="currency">주</span>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>추가 매수 단가 / 수량</label>
+            <div class="input-wrapper" style="margin-bottom: 8px;">
+              <input type="text" id="stock-add-price" placeholder="매수 가액 (원)">
+              <span class="currency">원</span>
+            </div>
+            <div class="input-wrapper">
+              <input type="text" id="stock-add-qty" placeholder="추가 수량 (주)">
+              <span class="currency">주</span>
+            </div>
+          </div>
+        </form>
+
+        <section class="result-area" id="stock-result" style="display: none;">
+          <h2>물타기 평단가 결과</h2>
+          <div class="result-box primary" style="background-color: #F04452;">
+            <span class="result-label">수정된 평균 단가</span>
+            <strong class="result-value highlight" id="stock-final-price">0 <span class="unit">원</span></strong>
+          </div>
+        </section>
+      </section>
+
       <!-- 6. 세금 지식 창고 (블로그) -->
       <section id="calc-blog" class="calc-section">
         <div class="blog-container">
@@ -531,7 +531,11 @@
     </footer>
 
     <nav class="bottom-nav">
-      <a href="#" class="nav-item active" data-tab="calc-loan" data-title="실시간 대출 계산기" data-desc="이자 및 상환 스케줄 분석">
+      <a href="#" class="nav-item active" data-tab="calc-tax" data-title="종합 세금 정밀 분석" data-desc="부동산, 증여, 상속 등 7종 세금 분석">
+        <span class="nav-icon">🧾</span>
+        <span class="nav-text">세금</span>
+      </a>
+      <a href="#" class="nav-item" data-tab="calc-loan" data-title="실시간 대출 계산기" data-desc="이자 및 상환 스케줄 분석">
         <span class="nav-icon">🏦</span>
         <span class="nav-text">대출</span>
       </a>
@@ -542,10 +546,6 @@
       <a href="#" class="nav-item" data-tab="calc-savings" data-title="예적금 이자 시뮬레이터" data-desc="만기 시 세후 수령액 정밀 계산">
         <span class="nav-icon">💰</span>
         <span class="nav-text">예적금</span>
-      </a>
-      <a href="#" class="nav-item" data-tab="calc-tax" data-title="종합 세금 정밀 분석" data-desc="부동산, 증여, 상속 등 7종 세금 분석">
-        <span class="nav-icon">🧾</span>
-        <span class="nav-text">세금</span>
       </a>
       <a href="#" class="nav-item" data-tab="calc-blog" data-title="세금 지식 창고" data-desc="대한민국 세금의 역사와 변천사">
         <span class="nav-icon">📖</span>
