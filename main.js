@@ -391,9 +391,30 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (type === 'comp') {
         const val = parseNum(document.getElementById('comp-value').value);
         const deduct = parseInt(document.querySelector('input[name="comp-type"]:checked').value);
+        const isRental = document.querySelector('input[name="comp-rental"]:checked').value === 'yes';
         if (!val) { resultArea.style.display = 'none'; return; }
-        const base = Math.max(0, (val - deduct) * 0.6);
-        res = { label: '종합부동산세(추정)', main: base * 0.01, details: `<span>공제금액: ${formatCurrency(deduct)} 원</span><br><span>세율: 0.5~5.0% (단순화)</span>` };
+        
+        let rentalExcludeAmt = 0;
+        let compMsg = '';
+        if (isRental) {
+          const excludeVal = parseNum(document.getElementById('comp-rental-exclude-value').value);
+          const regDate = document.getElementById('comp-rental-reg-date').value;
+          const isRegArea = document.querySelector('input[name="comp-reg-area"]:checked').value === 'yes';
+          
+          // 종부세 합산배제 요건: 2018.09.14 이후 조정지역 취득 시 배제 불가
+          if (isRegArea) {
+            compMsg = '2018.09.14 이후 조정지역 취득분 합산배제 불가';
+          } else {
+            rentalExcludeAmt = excludeVal;
+            compMsg = `합산배제 적용 (-${formatCurrency(rentalExcludeAmt)}원)`;
+          }
+        }
+
+        const base = Math.max(0, (val - rentalExcludeAmt - deduct) * 0.6);
+        res = { label: '종합부동산세(추정)', main: base * 0.01, details: `
+          <div class="row"><span>공제금액</span><span>${formatCurrency(deduct)} 원</span></div>
+          ${isRental ? `<div class="row"><span style="font-size:11px;">합산배제</span><span style="font-size:11px; color:var(--color-primary);">${compMsg}</span></div>` : ''}
+          <div class="row"><span>세율 (추정)</span><span>0.5~5.0% (단순화)</span></div>` };
       } else if (type === 'gain') {
         const buy = parseNum(document.getElementById('gain-buy').value), sell = parseNum(document.getElementById('gain-sell').value);
         const expenses = parseNum(document.getElementById('gain-expenses').value);
@@ -501,6 +522,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('gain-live-option').style.display = (assetType === 'house1' ? 'block' : 'none');
         document.getElementById('gain-rental-detail').style.display = (document.querySelector('input[name="gain-rental"]:checked').value === 'yes' ? 'block' : 'none');
       }
+      if (categorySelect.value === 'comp') {
+        document.getElementById('comp-rental-detail').style.display = (document.querySelector('input[name="comp-rental"]:checked').value === 'yes' ? 'block' : 'none');
+      }
       calc();
     });
     document.querySelectorAll('#calc-tax input, #calc-tax select').forEach(el => {
@@ -508,6 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.type === 'text') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
         if (el.name === 'gain-asset-type') document.getElementById('gain-live-option').style.display = (e.target.value === 'house1' ? 'block' : 'none');
         if (el.name === 'gain-rental') document.getElementById('gain-rental-detail').style.display = (e.target.value === 'yes' ? 'block' : 'none');
+        if (el.name === 'comp-rental') document.getElementById('comp-rental-detail').style.display = (e.target.value === 'yes' ? 'block' : 'none');
         calc();
       });
       el.addEventListener('change', calc);

@@ -182,6 +182,46 @@
                 <label for="comp-t2">다주택(9억)</label>
               </div>
             </div>
+            <div class="input-group">
+              <label>임대사업자 합산배제 여부</label>
+              <div class="radio-group">
+                <input type="radio" id="comp-rental1" name="comp-rental" value="no" checked>
+                <label for="comp-rental1">미적용</label>
+                <input type="radio" id="comp-rental2" name="comp-rental" value="yes">
+                <label for="comp-rental2">합산배제 신청</label>
+              </div>
+            </div>
+
+            <!-- 종부세 합산배제 상세 (JS 연동 필요) -->
+            <div id="comp-rental-detail" style="display: none; background: var(--color-input-bg); padding: 12px; border-radius: var(--radius-sm); margin-top: -12px; border: 1px solid var(--color-border);">
+              <div class="input-group">
+                <label for="comp-rental-exclude-value">합산배제 대상 주택 공시가 합계</label>
+                <div class="input-wrapper">
+                  <input type="text" id="comp-rental-exclude-value" placeholder="배제될 금액">
+                  <span class="currency">원</span>
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="comp-rental-reg-date">임대 등록 시기</label>
+                <select id="comp-rental-reg-date" class="select-field">
+                  <option value="pre201803">2018.03.31 이전 (의무 5년)</option>
+                  <option value="post201804" selected>2018.04.01 이후 (의무 10년)</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label>취득 당시 조정대상지역 여부</label>
+                <div class="radio-group">
+                  <input type="radio" id="comp-reg-area1" name="comp-reg-area" value="no" checked>
+                  <label for="comp-reg-area1">비조정</label>
+                  <input type="radio" id="comp-reg-area2" name="comp-reg-area" value="yes">
+                  <label for="comp-reg-area2">조정지역</label>
+                </div>
+              </div>
+              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
+                * 2018.09.14 이후 조정지역 내 취득 주택은 합산배제가 불가합니다.<br>
+                * 수도권 6억/지방 3억 이하(임대개시 시점) 요건을 충족해야 합니다.
+              </p>
+            </div>
           </div>
 
           <!-- 6. 양도세 -->
