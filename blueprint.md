@@ -21,6 +21,7 @@
 각 계산기의 시선이 가장 많이 머무는 결과창 하단이나 상단에 `<ad-placeholder>`를 전략적으로 배치하여, 금융/재테크 관련 고단가 광고 클릭을 유도합니다.
 
 ## Current Plan (March 2026)
+- [x] `ads.txt` 파일 추가 (AdSense 판매자 자격 인증)
 - [x] Google AdSense 심사용 스크립트 추가 (`index.html` 내 `<head>` 영역)
 - [x] Blueprint 업데이트
 - [ ] index.html 업데이트: 4개의 계산기 UI 폼 및 하단 네비게이션 추가.
