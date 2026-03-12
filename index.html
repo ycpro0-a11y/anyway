@@ -337,6 +337,26 @@
               <span class="result-value" id="loan-total-repayment">0 원</span>
             </div>
           </div>
+
+          <div class="schedule-area" style="margin-top: 24px;">
+            <h3>월별 상환 스케줄</h3>
+            <div class="table-wrapper" style="overflow-x: auto; margin-top: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
+              <table class="schedule-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead style="background-color: var(--color-input-bg); border-bottom: 1px solid var(--color-border);">
+                  <tr>
+                    <th style="padding: 10px; text-align: center;">회차</th>
+                    <th style="padding: 10px; text-align: right;">상환원금</th>
+                    <th style="padding: 10px; text-align: right;">이자</th>
+                    <th style="padding: 10px; text-align: right;">월상환액</th>
+                    <th style="padding: 10px; text-align: right;">잔액</th>
+                  </tr>
+                </thead>
+                <tbody id="loan-schedule-body">
+                  <!-- JS에서 삽입 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
       </section>
 

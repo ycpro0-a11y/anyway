@@ -58,29 +58,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const rateInput = document.getElementById('loan-rate');
     const termInput = document.getElementById('loan-term');
     const resultArea = document.getElementById('loan-result');
+    const scheduleBody = document.getElementById('loan-schedule-body');
+
     const calc = () => {
       const rate = parseFloat(rateInput.value);
       const months = parseInt(termInput.value, 10);
       const type = document.querySelector('input[name="loan-type"]:checked').value;
+      
       if (!loanAmount || !rate || !months) { resultArea.style.display = 'none'; return; }
+      
       const monthlyRate = (rate / 100) / 12;
       let monthlyPayment = 0, totalInterest = 0;
+      let schedule = [];
+      let balance = loanAmount;
+
       if (type === 'equal_principal_interest') {
         const p = Math.pow(1 + monthlyRate, months);
         monthlyPayment = loanAmount * monthlyRate * p / (p - 1);
-        totalInterest = (monthlyPayment * months) - loanAmount;
+        
+        for (let i = 1; i <= months; i++) {
+          const interest = balance * monthlyRate;
+          const principal = monthlyPayment - interest;
+          balance -= principal;
+          schedule.push({ month: i, principal, interest, total: monthlyPayment, balance: Math.max(0, balance) });
+          totalInterest += interest;
+        }
       } else if (type === 'equal_principal') {
         const principalPerMonth = loanAmount / months;
-        for (let i = 0; i < months; i++) totalInterest += (loanAmount - (principalPerMonth * i)) * monthlyRate;
-        monthlyPayment = principalPerMonth + (loanAmount * monthlyRate);
+        for (let i = 1; i <= months; i++) {
+          const interest = balance * monthlyRate;
+          const total = principalPerMonth + interest;
+          balance -= principalPerMonth;
+          schedule.push({ month: i, principal: principalPerMonth, interest, total, balance: Math.max(0, balance) });
+          totalInterest += interest;
+        }
+        monthlyPayment = (loanAmount + totalInterest) / months;
       } else {
-        monthlyPayment = loanAmount * monthlyRate; totalInterest = monthlyPayment * months;
+        // 만기일시
+        const interestPerMonth = loanAmount * monthlyRate;
+        for (let i = 1; i <= months; i++) {
+          const isLast = i === months;
+          const principal = isLast ? loanAmount : 0;
+          const total = interestPerMonth + principal;
+          if (isLast) balance = 0;
+          schedule.push({ month: i, principal, interest: interestPerMonth, total, balance });
+          totalInterest += interestPerMonth;
+        }
+        monthlyPayment = interestPerMonth;
       }
+
+      // UI 업데이트
       document.getElementById('loan-monthly-payment').innerHTML = `${formatCurrency(monthlyPayment)} <span class="unit">원</span>`;
       document.getElementById('loan-total-interest').textContent = `${formatCurrency(totalInterest)} 원`;
       document.getElementById('loan-total-repayment').textContent = `${formatCurrency(loanAmount + totalInterest)} 원`;
+      
+      // 스케줄 렌더링
+      scheduleBody.innerHTML = schedule.map(row => `
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <td style="padding: 8px; text-align: center;">${row.month}회</td>
+          <td style="padding: 8px; text-align: right;">${formatCurrency(row.principal)}</td>
+          <td style="padding: 8px; text-align: right;">${formatCurrency(row.interest)}</td>
+          <td style="padding: 8px; text-align: right;">${formatCurrency(row.total)}</td>
+          <td style="padding: 8px; text-align: right; color: var(--color-text-caption);">${formatCurrency(row.balance)}</td>
+        </tr>
+      `).join('');
+
       resultArea.style.display = 'block';
     };
+
     amtInput.addEventListener('input', (e) => { loanAmount = parseNum(e.target.value); e.target.value = loanAmount ? formatCurrency(loanAmount) : ''; calc(); });
     [rateInput, termInput].forEach(i => i.addEventListener('input', calc));
     document.querySelectorAll('input[name="loan-type"]').forEach(r => r.addEventListener('change', calc));
