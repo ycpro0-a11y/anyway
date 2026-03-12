@@ -1,1 +1,299 @@
-/* Add styles here */
+:root {
+  /* Toss-like Modern Color Palette */
+  --color-primary: #3182F6;
+  --color-primary-hover: #1B64DA;
+  --color-background: #F2F4F6;
+  --color-surface: #FFFFFF;
+  --color-text-title: #191F28;
+  --color-text-body: #4E5968;
+  --color-text-caption: #8B95A1;
+  --color-border: #E5E8EB;
+  --color-input-bg: #F9FAFB;
+  --color-error: #F04452;
+  --color-highlight: #E8F3FF;
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  
+  --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-background);
+  color: var(--color-text-title);
+  line-height: 1.5;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 480px; /* 모바일 뷰 고정 (웹에서도 앱처럼 보이게) */
+  min-height: 100vh;
+  background-color: var(--color-background);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  padding: 32px 24px 16px;
+  background-color: var(--color-background);
+}
+
+.app-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  margin-bottom: 4px;
+}
+
+.app-header p {
+  font-size: 14px;
+  color: var(--color-text-caption);
+}
+
+/* Main Card */
+.calculator-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 24px;
+  flex: 1;
+  box-shadow: var(--shadow-md);
+  margin-top: 8px;
+}
+
+/* Form Groups */
+.input-group {
+  margin-bottom: 28px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-body);
+  margin-bottom: 10px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 16px 40px 16px 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-title);
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: var(--font-family);
+}
+
+.input-wrapper input:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: 0 0 0 4px var(--color-highlight);
+}
+
+.input-wrapper input::placeholder {
+  color: var(--color-border);
+  font-weight: 400;
+}
+
+.input-wrapper .currency {
+  position: absolute;
+  right: 16px;
+  color: var(--color-text-caption);
+  font-weight: 500;
+}
+
+/* Quick Add Buttons */
+.quick-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none; /* Firefox */
+}
+.quick-add::-webkit-scrollbar { display: none; } /* Chrome */
+
+.quick-add button {
+  white-space: nowrap;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  background-color: var(--color-background);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: var(--font-family);
+}
+
+.quick-add button:active {
+  background-color: var(--color-border);
+}
+
+.quick-add .btn-clear {
+  margin-left: auto;
+  color: var(--color-text-caption);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+}
+
+/* Radio Buttons (Segmented Control) */
+.radio-group {
+  display: flex;
+  background-color: var(--color-input-bg);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  gap: 4px;
+}
+
+.radio-group input[type="radio"] {
+  display: none;
+}
+
+.radio-group label {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-caption);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: 0;
+  transition: all 0.2s;
+}
+
+.radio-group input[type="radio"]:checked + label {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.help-text {
+  font-size: 13px;
+  color: var(--color-text-caption);
+  margin-top: 10px;
+}
+
+/* Result Area */
+.result-area {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px dashed var(--color-border);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-area h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--color-text-title);
+}
+
+.result-box {
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.result-box.primary {
+  background-color: var(--color-primary);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.result-box.primary .result-label {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.result-box.primary .result-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.result-box.primary .unit {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.result-box.secondary {
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+}
+
+.result-box.secondary .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.result-box.secondary .row:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.result-box.secondary .result-label {
+  font-size: 14px;
+  color: var(--color-text-body);
+}
+
+.result-box.secondary .result-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-title);
+}
+
+.notice {
+  font-size: 12px;
+  color: var(--color-text-caption);
+  margin-top: 16px;
+  text-align: center;
+}
+
+/* Footer */
+.app-footer {
+  padding: 24px;
+  text-align: center;
+  background-color: var(--color-surface);
+  color: var(--color-text-caption);
+  font-size: 12px;
+}

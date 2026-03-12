@@ -1,14 +1,124 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>스마트 대출 이자 계산기 | 실시간 금리 상환액 확인</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="가장 빠르고 정확한 실시간 대출 이자 계산기. 원리금균등, 원금균등, 만기일시 상환 방식 지원. 내 한 달 이자와 상환액을 미리 확인하세요.">
+  <meta name="keywords" content="대출계산기, 이자계산기, 대출금리계산기, 원리금균등상환, 대출이자, 핀테크, 재테크">
+  
+  <!-- Modern Font (Pretendard) -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="main.js" defer></script>
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>스마트 대출 계산기</h1>
+      <p>가장 빠르고 정확한 실시간 이자 계산</p>
+    </header>
+
+    <!-- [수익화 포인트 1] 헤더 직하단 광고 (가장 높은 주목도) -->
+    <ad-placeholder width="100%" height="80px" text="[광고] 직장인 신용대출 최저금리 비교 (구글 애드센스)"></ad-placeholder>
+
+    <main class="calculator-card">
+      <form id="calc-form">
+        <!-- 1. 대출 금액 -->
+        <div class="input-group">
+          <label for="amount">대출 금액 (원)</label>
+          <div class="input-wrapper">
+            <input type="text" id="amount" name="amount" placeholder="예: 50,000,000" inputmode="numeric" required>
+            <span class="currency">원</span>
+          </div>
+          <div class="quick-add">
+            <button type="button" data-val="1000000">+100만</button>
+            <button type="button" data-val="5000000">+500만</button>
+            <button type="button" data-val="10000000">+1000만</button>
+            <button type="button" data-val="50000000">+5000만</button>
+            <button type="button" class="btn-clear" id="btn-clear">초기화</button>
+          </div>
+        </div>
+
+        <!-- 2. 대출 금리 -->
+        <div class="input-group">
+          <label for="rate">연 이자율 (%)</label>
+          <div class="input-wrapper">
+            <input type="number" id="rate" name="rate" placeholder="예: 4.5" step="0.01" inputmode="decimal" required>
+            <span class="currency">%</span>
+          </div>
+        </div>
+
+        <!-- 3. 대출 기간 -->
+        <div class="input-group">
+          <label for="term">대출 기간 (개월)</label>
+          <div class="input-wrapper">
+            <input type="number" id="term" name="term" placeholder="예: 60" inputmode="numeric" required>
+            <span class="currency">개월</span>
+          </div>
+          <div class="quick-add">
+            <button type="button" data-term="12">1년</button>
+            <button type="button" data-term="24">2년</button>
+            <button type="button" data-term="36">3년</button>
+            <button type="button" data-term="60">5년</button>
+            <button type="button" data-term="120">10년</button>
+          </div>
+        </div>
+
+        <!-- 4. 상환 방법 -->
+        <div class="input-group">
+          <label>상환 방식</label>
+          <div class="radio-group">
+            <input type="radio" id="type1" name="type" value="equal_principal_interest" checked>
+            <label for="type1">원리금균등</label>
+
+            <input type="radio" id="type2" name="type" value="equal_principal">
+            <label for="type2">원금균등</label>
+
+            <input type="radio" id="type3" name="type" value="bullet">
+            <label for="type3">만기일시</label>
+          </div>
+          <p class="help-text" id="type-desc">매월 동일한 금액(원금+이자)을 갚아나가는 방식입니다.</p>
+        </div>
+      </form>
+
+      <!-- [수익화 포인트 2] 폼과 결과 사이 광고 (결과를 기다리는/확인하는 시선 집중 구간) -->
+      <ad-placeholder width="100%" height="80px" text="[광고] 자동차 보험료 최저가 확인 (구글 애드센스)"></ad-placeholder>
+
+      <!-- 5. 결과 영역 -->
+      <section class="result-area" id="result-area" style="display: none;">
+        <h2>계산 결과</h2>
+        
+        <div class="result-box primary">
+          <span class="result-label" id="monthly-label">첫 달 상환액</span>
+          <strong class="result-value highlight" id="monthly-payment">0 <span class="unit">원</span></strong>
+        </div>
+
+        <div class="result-box secondary">
+          <div class="row">
+            <span class="result-label">총 대출 이자</span>
+            <span class="result-value" id="total-interest">0 원</span>
+          </div>
+          <div class="row">
+            <span class="result-label">총 상환 금액 (원금+이자)</span>
+            <span class="result-value" id="total-repayment">0 원</span>
+          </div>
+        </div>
+        
+        <p class="notice">* 이 결과는 근사치이며, 실제 금융기관의 대출 취급 조건, 금리 변동 등에 따라 차이가 발생할 수 있습니다.</p>
+      </section>
+
+    </main>
+
+    <!-- [수익화 포인트 3] 하단 광고 (스크롤을 끝까지 내린 유저 대상) -->
+    <ad-placeholder width="100%" height="80px" text="[광고] 2030 직장인 재테크 세미나 신청 (구글 애드센스)"></ad-placeholder>
+    
+    <footer class="app-footer">
+      <p>&copy; 2026 Smart Calculator. All rights reserved.</p>
+    </footer>
+  </div>
 </body>
 </html>
