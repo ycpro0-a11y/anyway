@@ -310,7 +310,7 @@
             </div>
           </div>
 
-          <!-- 3. 부동산 공통 (취득세, 재산세, 종부세, 양도세용 입력필드) -->
+          <!-- 3. 취득세 (부동산) -->
           <div id="tax-input-acq" class="tax-form-group" style="display: none;">
             <div class="input-group">
               <label for="acq-amount">매매 가액 (원)</label>
@@ -320,7 +320,7 @@
               </div>
             </div>
             <div class="input-group">
-              <label>매수 후 주택 수</label>
+              <label>취득 후 주택 수</label>
               <div class="radio-group">
                 <input type="radio" id="acq-h1" name="acq-house" value="1" checked>
                 <label for="acq-h1">1주택</label>
@@ -328,6 +328,15 @@
                 <label for="acq-h2">2주택</label>
                 <input type="radio" id="acq-h3" name="acq-house" value="3">
                 <label for="acq-h3">3주택+</label>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>매수 지역 구분</label>
+              <div class="radio-group">
+                <input type="radio" id="acq-area1" name="acq-area" value="non" checked>
+                <label for="acq-area1">비규제지역</label>
+                <input type="radio" id="acq-area2" name="acq-area" value="reg">
+                <label for="acq-area2">규제지역</label>
               </div>
             </div>
           </div>
@@ -350,9 +359,29 @@
                 <span class="currency">원</span>
               </div>
             </div>
+            <div class="input-group">
+              <label>공제 구분</label>
+              <div class="radio-group">
+                <input type="radio" id="comp-t1" name="comp-type" value="1200000000" checked>
+                <label for="comp-t1">1주택자 (12억)</label>
+                <input type="radio" id="comp-t2" name="comp-type" value="900000000">
+                <label for="comp-t2">다주택자 (9억)</label>
+              </div>
+            </div>
           </div>
 
           <div id="tax-input-gain" class="tax-form-group" style="display: none;">
+            <div class="input-group">
+              <label>주택 수 구분</label>
+              <div class="radio-group">
+                <input type="radio" id="gain-h1" name="gain-asset-type" value="house1" checked>
+                <label for="gain-h1">1주택</label>
+                <input type="radio" id="gain-h2" name="gain-asset-type" value="house2">
+                <label for="gain-h2">2주택</label>
+                <input type="radio" id="gain-h3" name="gain-asset-type" value="house3">
+                <label for="gain-h3">3주택+</label>
+              </div>
+            </div>
             <div class="input-group">
               <label for="gain-buy">취득 가액 (원)</label>
               <div class="input-wrapper">
@@ -372,6 +401,15 @@
               <div class="input-wrapper">
                 <input type="number" id="gain-hold-years" placeholder="예: 5">
                 <span class="currency">년</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>매도 지역 구분</label>
+              <div class="radio-group">
+                <input type="radio" id="gain-area1" name="gain-area" value="non" checked>
+                <label for="gain-area1">비조정</label>
+                <input type="radio" id="gain-area2" name="gain-area" value="reg">
+                <label for="gain-area2">조정지역</label>
               </div>
             </div>
           </div>

@@ -213,26 +213,44 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (type === 'acq') {
         const val = parseNum(document.getElementById('acq-amount').value);
         const count = parseInt(document.querySelector('input[name="acq-house"]:checked').value);
+        const isReg = document.querySelector('input[name="acq-area"]:checked').value === 'reg';
         if (!val) { resultArea.style.display = 'none'; return; }
-        let rate = val <= 600000000 ? 0.01 : (val <= 900000000 ? (val*(2/300000000)-3)/100 : 0.03);
-        if (count === 2) rate = 0.08; else if (count >= 3) rate = 0.12;
-        res = { label: '취득세 합계', main: val * rate * 1.1, details: `<div class="row"><span>적용세율</span><span>${(rate*100).toFixed(1)}%</span></div>` };
+        
+        let rate = 0.01;
+        if (count === 1) rate = (val <= 600000000 ? 0.01 : (val <= 900000000 ? (val*(2/300000000)-3)/100 : 0.03));
+        else if (count === 2) rate = isReg ? 0.08 : (val <= 600000000 ? 0.01 : (val <= 900000000 ? (val*(2/300000000)-3)/100 : 0.03));
+        else rate = isReg ? 0.12 : 0.08;
+        
+        const mainTax = val * rate;
+        res = { label: '취득세 합계 (지방교육세 포함)', main: mainTax * 1.1, details: `<div class="row"><span>적용세율</span><span>${(rate*100).toFixed(1)}%</span></div>` };
       } else if (type === 'prop') {
         const val = parseNum(document.getElementById('prop-value').value);
         if (!val) { resultArea.style.display = 'none'; return; }
         const base = val * 0.6;
-        let tax = base <= 60000000 ? base*0.001 : (base <= 150000000 ? 60000+(base-60000000)*0.0015 : 195000+(base-150000000)*0.0025);
+        let tax = base <= 60000000 ? base*0.001 : (base <= 150000000 ? 60000+(base-60000000)*0.0015 : (base <= 300000000 ? 195000+(base-150000000)*0.0025 : 570000+(base-300000000)*0.004));
         res = { label: '재산세(추정)', main: tax, details: `<span>과세표준: ${formatCurrency(base)} 원</span>` };
       } else if (type === 'comp') {
         const val = parseNum(document.getElementById('comp-value').value);
+        const deduct = parseInt(document.querySelector('input[name="comp-type"]:checked').value);
         if (!val) { resultArea.style.display = 'none'; return; }
-        const base = Math.max(0, (val - 900000000) * 0.6);
+        const base = Math.max(0, (val - deduct) * 0.6);
         res = { label: '종합부동산세(추정)', main: base * 0.01, details: `<span>공제 후 과표: ${formatCurrency(base)} 원</span>` };
       } else if (type === 'gain') {
         const buy = parseNum(document.getElementById('gain-buy').value), sell = parseNum(document.getElementById('gain-sell').value);
+        const asset = document.querySelector('input[name="gain-asset-type"]:checked').value;
+        const isReg = document.querySelector('input[name="gain-area"]:checked').value === 'reg';
+        const hold = parseInt(document.getElementById('gain-hold-years').value) || 0;
         if (!buy || !sell) { resultArea.style.display = 'none'; return; }
-        const profit = Math.max(0, sell - buy - 2500000);
-        res = { label: '양도소득세(추정)', main: profit * 0.24 - 5760000, details: `<span>양도차익: ${formatCurrency(sell-buy)} 원</span>` };
+        
+        let profit = sell - buy;
+        if (asset === 'house1') {
+          if (sell <= 1200000000) return { label: '양도소득세', main: 0, details: '1주택 비과세 대상' };
+          profit = profit * (sell - 1200000000) / sell;
+        }
+        
+        let rate = 0.24; // 기본세율 단순화
+        if (isReg) rate += (asset === 'house2' ? 0.2 : (asset === 'house3' ? 0.3 : 0));
+        res = { label: '양도소득세(추정)', main: profit * rate, details: `<span>양도차익: ${formatCurrency(sell-buy)} 원</span><br><span>적용세율: ${(rate*100).toFixed(0)}%</span>` };
       } else if (type === 'vat') {
         const val = parseNum(document.getElementById('vat-amount').value);
         if (!val) { resultArea.style.display = 'none'; return; }
