@@ -1,28 +1,3 @@
-// [웹 컴포넌트] 광고 배너 (AdSense 최적화 플레이스홀더)
-class AdPlaceholder extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-  }
-  connectedCallback() {
-    const width = this.getAttribute('width') || '100%';
-    const height = this.getAttribute('height') || '80px';
-    const text = this.getAttribute('text') || 'Advertisement';
-    this.shadowRoot.innerHTML = `
-      <style>
-        .ad-container {
-          display: flex; align-items: center; justify-content: center;
-          width: ${width}; height: ${height}; background-color: #f8f9fa;
-          border: 1px dashed #ced4da; color: #868e96; font-size: 12px;
-          margin: 16px 0; border-radius: 8px; box-sizing: border-box; text-align: center; padding: 0 16px;
-        }
-      </style>
-      <div class="ad-container">${text}</div>
-    `;
-  }
-}
-customElements.define('ad-placeholder', AdPlaceholder);
-
 // 공통 유틸리티
 const formatCurrency = (num) => {
   if (isNaN(num) || num === Infinity || num === -Infinity) return '0';
