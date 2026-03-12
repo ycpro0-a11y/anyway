@@ -445,28 +445,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const calcGain = () => {
       const buy = parseNum(document.getElementById('gain-buy').value);
       const sell = parseNum(document.getElementById('gain-sell').value);
+      if (!buy || !sell) return null;
+      
+      const asset = document.querySelector('input[name="gain-asset-type"]:checked').value;
       const holdY = parseInt(document.getElementById('gain-hold-years').value, 10) || 0;
       const liveY = parseInt(document.getElementById('gain-live-years').value, 10) || 0;
-      const type = document.querySelector('input[name="gain-asset-type"]:checked').value;
+      const isReg = document.querySelector('input[name="gain-area"]:checked') ? document.querySelector('input[name="gain-area"]:checked').value === 'reg' : false;
       
-      if (!buy || !sell) return null;
       let profit = sell - buy;
       let taxableProfit = profit;
       
       // 1주택자 비과세 (12억)
-      if (type === 'house1' && sell > 1200000000) {
+      if (asset === 'house1' && sell > 1200000000) {
         taxableProfit = profit * (sell - 1200000000) / sell;
-      } else if (type === 'house1' && sell <= 1200000000) {
+      } else if (asset === 'house1' && sell <= 1200000000) {
         return { label: '양도소득세', main: 0, details: `<p class="help-text" style="color:var(--color-primary);">1주택자 12억 이하 비과세 대상입니다.</p>` };
       }
       
       // 장기보유특별공제
       let lthdRate = 0;
-      if (type === 'house1') {
+      if (asset === 'house1') {
         if (holdY >= 3) lthdRate = Math.min(holdY * 4, 40) + Math.min(liveY * 4, 40);
-      } else {
+      } else if (asset === 'other' || !isReg) {
         if (holdY >= 3) lthdRate = Math.min(holdY * 2, 30);
       }
+      // 조정지역 다주택자(house2, house3+)는 장특공 배제
       
       const lthdAmount = taxableProfit * (lthdRate / 100);
       const income = Math.max(0, taxableProfit - lthdAmount - 2500000); // 기본공제 250만
@@ -476,13 +479,53 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (income <= 50000000) { rate = 0.15; prog = 1260000; }
       else if (income <= 88000000) { rate = 0.24; prog = 5760000; }
       else if (income <= 150000000) { rate = 0.35; prog = 15440000; }
-      else { rate = 0.45; prog = 65400000; }
+      else if (income <= 300000000) { rate = 0.38; prog = 19940000; }
+      else if (income <= 500000000) { rate = 0.40; prog = 25940000; }
+      else if (income <= 1000000000) { rate = 0.42; prog = 35940000; }
+      else { rate = 0.45; prog = 65940000; }
+      
+      // 다주택자 중과세율
+      if (isReg) {
+        if (asset === 'house2') rate += 0.20;
+        else if (asset === 'house3') rate += 0.30;
+      }
       
       const tax = (income * rate) - prog;
       
-      return { label: '양도소득세 (지방세 별도)', main: tax, details: `
+      return { label: '양도소득세 (지방세 별도)', main: Math.max(0, tax), details: `
         <div class="row"><span class="result-label">장기보유특별공제 (${lthdRate}%)</span><span class="result-value" style="color:var(--color-primary);">- ${formatCurrency(lthdAmount)} 원</span></div>
         <div class="row"><span class="result-label">과세표준</span><span class="result-value">${formatCurrency(income)} 원</span></div>
+        <div class="row"><span class="result-label">적용세율</span><span class="result-value">${(rate * 100).toFixed(0)}%</span></div>
+      ` };
+    };
+
+    // --- 7. Inherit Logic (상속세) ---
+    const calcInherit = () => {
+      const val = parseNum(document.getElementById('inherit-amount').value);
+      if (!val) return null;
+      const family = document.querySelector('input[name="inherit-family"]:checked').value;
+      
+      let deduction = 0;
+      if (family === 'both') deduction = 1000000000; // 일괄공제 5억 + 배우자공제 최소 5억 = 10억
+      else if (family === 'child') deduction = 500000000; // 일괄공제 5억
+      else if (family === 'spouse') deduction = 700000000; // 기초공제 2억 + 배우자공제 최소 5억 = 7억
+      
+      const taxBase = Math.max(0, val - deduction);
+      let rate = 0, prog = 0;
+      if (taxBase <= 100000000) { rate = 0.1; prog = 0; }
+      else if (taxBase <= 500000000) { rate = 0.2; prog = 10000000; }
+      else if (taxBase <= 1000000000) { rate = 0.3; prog = 60000000; }
+      else if (taxBase <= 3000000000) { rate = 0.4; prog = 160000000; }
+      else { rate = 0.5; prog = 460000000; }
+      
+      const calculated = Math.max(0, (taxBase * rate) - prog);
+      const finalTax = calculated * 0.97; // 3% 신고세액공제
+      
+      return { label: '예상 상속세액 (추정)', main: finalTax, details: `
+        <div class="row"><span class="result-label">총 상속재산</span><span class="result-value">${formatCurrency(val)} 원</span></div>
+        <div class="row"><span class="result-label">공제금액 (기본가정)</span><span class="result-value" style="color:var(--color-primary);">- ${formatCurrency(deduction)} 원</span></div>
+        <div class="row"><span class="result-label">과세표준</span><span class="result-value">${formatCurrency(taxBase)} 원</span></div>
+        <div class="row"><span class="result-label">적용세율</span><span class="result-value">${rate * 100}%</span></div>
       ` };
     };
 
@@ -495,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (type === 'prop') res = calcProp();
       else if (type === 'comp') res = calcComp();
       else if (type === 'gain') res = calcGain();
+      else if (type === 'inherit') res = calcInherit();
 
       if (!res) { resultArea.style.display = 'none'; return; }
       resultLabelEl.textContent = res.label;
