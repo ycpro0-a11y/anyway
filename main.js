@@ -449,32 +449,78 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="row"><span style="font-size:11px; color:var(--color-primary);">${details}</span></div>` 
         };
       } else if (type === 'comp') {
+        const assetType = document.getElementById('comp-asset-type').value;
         const val = parseNum(document.getElementById('comp-value').value);
-        const deduct = parseInt(document.querySelector('input[name="comp-type"]:checked').value);
+        const deductInput = document.querySelector('input[name="comp-type"]:checked');
+        const deduct = deductInput ? parseInt(deductInput.value) : 0;
         const isRental = document.querySelector('input[name="comp-rental"]:checked').value === 'yes';
+        const isMulti = document.querySelector('input[name="comp-multi"]:checked').value === 'yes';
+        
         if (!val) { resultArea.style.display = 'none'; return; }
         
-        let rentalExcludeAmt = 0;
+        let ratio = 0.6; // 주택/토지 공통 60% (현행)
+        let actualDeduct = 0;
+        let compTax = 0;
         let compMsg = '';
-        if (isRental) {
-          const excludeVal = parseNum(document.getElementById('comp-rental-exclude-value').value);
-          const regDate = document.getElementById('comp-rental-reg-date').value;
-          const isRegArea = document.querySelector('input[name="comp-reg-area"]:checked').value === 'yes';
-          
-          // 종부세 합산배제 요건: 2018.09.14 이후 조정지역 취득 시 배제 불가
-          if (isRegArea) {
-            compMsg = '2018.09.14 이후 조정지역 취득분 합산배제 불가';
-          } else {
-            rentalExcludeAmt = excludeVal;
-            compMsg = `합산배제 적용 (-${formatCurrency(rentalExcludeAmt)}원)`;
+        let rentalExcludeAmt = 0;
+
+        if (assetType === 'house') {
+          actualDeduct = deduct;
+          if (isRental) {
+            const excludeVal = parseNum(document.getElementById('comp-rental-exclude-value').value);
+            const isRegArea = document.querySelector('input[name="comp-reg-area"]:checked').value === 'yes';
+            if (isRegArea) {
+              compMsg = '2018.09.14 이후 조정지역 취득분 합산배제 불가';
+            } else {
+              rentalExcludeAmt = excludeVal;
+              compMsg = `합산배제 적용 (-${formatCurrency(rentalExcludeAmt)}원)`;
+            }
           }
+
+          const taxBase = Math.max(0, (val - rentalExcludeAmt - actualDeduct) * ratio);
+          
+          if (isMulti && taxBase > 1200000000) {
+            // 3주택 이상 중과세율 (0.5% ~ 5.0%)
+            if (taxBase <= 300000000) compTax = taxBase * 0.005;
+            else if (taxBase <= 600000000) compTax = 1500000 + (taxBase - 300000000) * 0.007;
+            else if (taxBase <= 1200000000) compTax = 3600000 + (taxBase - 600000000) * 0.01;
+            else if (taxBase <= 2500000000) compTax = 9600000 + (taxBase - 1200000000) * 0.02;
+            else if (taxBase <= 5000000000) compTax = 35600000 + (taxBase - 2500000000) * 0.03;
+            else if (taxBase <= 9400000000) compTax = 110600000 + (taxBase - 5000000000) * 0.04;
+            else compTax = 286600000 + (taxBase - 9400000000) * 0.05;
+            compMsg = (compMsg ? compMsg + ' / ' : '') + '3주택 이상 중과세율 적용';
+          } else {
+            // 일반세율 (0.5% ~ 2.7%)
+            if (taxBase <= 300000000) compTax = taxBase * 0.005;
+            else if (taxBase <= 600000000) compTax = 1500000 + (taxBase - 300000000) * 0.007;
+            else if (taxBase <= 1200000000) compTax = 3600000 + (taxBase - 600000000) * 0.01;
+            else if (taxBase <= 2500000000) compTax = 9600000 + (taxBase - 1200000000) * 0.013;
+            else if (taxBase <= 5000000000) compTax = 26500000 + (taxBase - 2500000000) * 0.015;
+            else if (taxBase <= 9400000000) compTax = 64000000 + (taxBase - 5000000000) * 0.02;
+            else compTax = 152000000 + (taxBase - 9400000000) * 0.027;
+            compMsg = (compMsg ? compMsg + ' / ' : '') + '일반/2주택 세율 적용';
+          }
+        } else if (assetType === 'land_gen') {
+          actualDeduct = 500000000; // 종합합산 토지 공제 5억
+          const taxBase = Math.max(0, (val - actualDeduct) * ratio);
+          if (taxBase <= 1500000000) compTax = taxBase * 0.01;
+          else if (taxBase <= 4500000000) compTax = 15000000 + (taxBase - 1500000000) * 0.02;
+          else compTax = 75000000 + (taxBase - 4500000000) * 0.03;
+          compMsg = '종합합산 토지 세율(1~3%) 적용';
+        } else if (assetType === 'land_sep') {
+          actualDeduct = 8000000000; // 별도합산 토지 공제 80억
+          const taxBase = Math.max(0, (val - actualDeduct) * ratio);
+          if (taxBase <= 20000000000) compTax = taxBase * 0.005;
+          else if (taxBase <= 40000000000) compTax = 100000000 + (taxBase - 20000000000) * 0.006;
+          else compTax = 220000000 + (taxBase - 40000000000) * 0.007;
+          compMsg = '별도합산 토지 세율(0.5~0.7%) 적용';
         }
 
-        const base = Math.max(0, (val - rentalExcludeAmt - deduct) * 0.6);
-        res = { label: '종합부동산세(추정)', main: base * 0.01, details: `
-          <div class="row"><span>공제금액</span><span>${formatCurrency(deduct)} 원</span></div>
-          ${isRental ? `<div class="row"><span style="font-size:11px;">합산배제</span><span style="font-size:11px; color:var(--color-primary);">${compMsg}</span></div>` : ''}
-          <div class="row"><span>세율 (추정)</span><span>0.5~5.0% (단순화)</span></div>` };
+        res = { label: '종합부동산세 총합 (추정)', main: compTax, details: `
+          <div class="row"><span>기본 공제액</span><span>${formatCurrency(actualDeduct)} 원</span></div>
+          <div class="row"><span>과세표준 (60%)</span><span>${formatCurrency(Math.max(0, (val - rentalExcludeAmt - actualDeduct) * ratio))} 원</span></div>
+          <div class="row"><span style="font-size:11px; color:var(--color-primary);">${compMsg}</span></div>
+          <p style="font-size:10px; color:var(--color-text-caption); margin-top:8px;">* 세부담 상한 및 농어촌특별세(20%)는 제외된 본세 추정치입니다.</p>` };
       } else if (type === 'gain') {
         const buy = parseNum(document.getElementById('gain-buy').value), sell = parseNum(document.getElementById('gain-sell').value);
         const expenses = parseNum(document.getElementById('gain-expenses').value);
@@ -583,7 +629,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('gain-rental-detail').style.display = (document.querySelector('input[name="gain-rental"]:checked').value === 'yes' ? 'block' : 'none');
       }
       if (categorySelect.value === 'comp') {
-        document.getElementById('comp-rental-detail').style.display = (document.querySelector('input[name="comp-rental"]:checked').value === 'yes' ? 'block' : 'none');
+        const assetType = document.getElementById('comp-asset-type').value;
+        document.getElementById('comp-house-option').style.display = (assetType === 'house' ? 'block' : 'none');
+        document.getElementById('comp-rental-detail').style.display = (assetType === 'house' && document.querySelector('input[name="comp-rental"]:checked').value === 'yes' ? 'block' : 'none');
       }
       if (categorySelect.value === 'prop') {
         const assetType = document.getElementById('prop-asset-type').value;
@@ -598,6 +646,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el.name === 'gain-asset-type') document.getElementById('gain-live-option').style.display = (e.target.value === 'house1' ? 'block' : 'none');
         if (el.name === 'gain-rental') document.getElementById('gain-rental-detail').style.display = (e.target.value === 'yes' ? 'block' : 'none');
         if (el.name === 'comp-rental') document.getElementById('comp-rental-detail').style.display = (e.target.value === 'yes' ? 'block' : 'none');
+        if (el.id === 'comp-asset-type') {
+          document.getElementById('comp-house-option').style.display = (e.target.value === 'house' ? 'block' : 'none');
+        }
         if (el.id === 'prop-asset-type') {
           document.getElementById('prop-house-option').style.display = (e.target.value === 'house' ? 'block' : 'none');
           document.getElementById('prop-land-option').style.display = (e.target.value === 'land' ? 'block' : 'none');
