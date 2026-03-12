@@ -399,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const expenses = parseNum(document.getElementById('gain-expenses').value);
         const asset = document.querySelector('input[name="gain-asset-type"]:checked').value;
         const isReg = document.querySelector('input[name="gain-area"]:checked').value === 'reg';
+        const isRental = document.querySelector('input[name="gain-rental"]:checked').value === 'yes';
         const hold = parseInt(document.getElementById('gain-hold-years').value) || 0;
         const live = parseInt(document.getElementById('gain-live-years').value) || 0;
         if (!buy || !sell) { resultArea.style.display = 'none'; return; }
@@ -410,19 +411,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         let lthdRate = 0;
         if (asset === 'house1' && hold >= 3) lthdRate = Math.min(hold * 4, 40) + Math.min(live * 4, 40);
-        else if (hold >= 3 && (!isReg || asset === 'other')) lthdRate = Math.min(hold * 2, 30);
+        else if (hold >= 3 && (!isReg || asset === 'other' || isRental)) lthdRate = Math.min(hold * 2, 30);
         const lthdAmount = taxableProfit * (lthdRate / 100);
         const taxBase = Math.max(0, taxableProfit - lthdAmount - 2500000);
         const { rate, deduct } = getIncomeTaxRate(taxBase);
         let finalRate = rate;
-        if (isReg && asset !== 'house1') { if (asset === 'house2') finalRate += 0.2; else if (asset === 'house3') finalRate += 0.3; }
+        let isSurchargeApplied = false;
+        if (isReg && asset !== 'house1' && !isRental) { 
+          if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
+          else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
+        }
         const mainTax = (taxBase * finalRate) - deduct;
         const localTax = mainTax * 0.1;
         res = { label: '양도소득세 총합 (지방세 포함)', main: mainTax + localTax, details: `
           <div class="row"><span>양도차익 (경비제외)</span><span>${formatCurrency(profit)} 원</span></div>
           <div class="row"><span>장특공 (${lthdRate}%)</span><span>-${formatCurrency(lthdAmount)} 원</span></div>
           <div class="row"><span>기본세율</span><span>${(rate*100).toFixed(0)}%</span></div>
-          ${isReg && asset !== 'house1' ? `<div class="row"><span>다주택 중과</span><span>+${((finalRate-rate)*100).toFixed(0)}%p</span></div>` : ''}
+          ${isSurchargeApplied ? `<div class="row"><span>다주택 중과</span><span>+${((finalRate-rate)*100).toFixed(0)}%p</span></div>` : (isRental && isReg && asset !== 'house1' ? '<div class="row"><span>중과배제</span><span>임대사업자 적용</span></div>' : '')}
           <div class="row"><span>지방소득세 (10%)</span><span>${formatCurrency(localTax)} 원</span></div>` };
       } else if (type === 'vat') {
         const val = parseNum(document.getElementById('vat-amount').value);
