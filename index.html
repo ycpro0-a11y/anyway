@@ -449,6 +449,17 @@
               <span class="currency">%</span>
             </div>
           </div>
+          <div class="input-group">
+            <label>이자 과세</label>
+            <div class="radio-group">
+              <input type="radio" id="sav-tax1" name="sav-tax-type" value="normal" checked>
+              <label for="sav-tax1">일반(15.4%)</label>
+              <input type="radio" id="sav-tax2" name="sav-tax-type" value="prefer">
+              <label for="sav-tax2">세금우대(1.4%)</label>
+              <input type="radio" id="sav-tax3" name="sav-tax-type" value="free">
+              <label for="sav-tax3">비과세(0%)</label>
+            </div>
+          </div>
         </form>
 
         <section class="result-area" id="sav-result" style="display: none;">
@@ -457,7 +468,48 @@
             <span class="result-label">세후 최종 수령액</span>
             <strong class="result-value highlight" id="sav-total-receive">0 <span class="unit">원</span></strong>
           </div>
+          <div class="result-box secondary" id="sav-result-details"></div>
         </section>
+
+        <div class="schedule-area" style="margin-top: 24px;">
+          <h3>이자소득 공제세율 안내</h3>
+          <div class="table-wrapper" style="overflow-x: auto; margin-top: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
+            <table class="schedule-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead style="background-color: var(--color-input-bg); border-bottom: 1px solid var(--color-border);">
+                <tr>
+                  <th style="padding: 10px; text-align: left;">과세 구분</th>
+                  <th style="padding: 10px; text-align: right;">소득세</th>
+                  <th style="padding: 10px; text-align: right;">농특세/지방세</th>
+                  <th style="padding: 10px; text-align: right;">합계 세율</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 10px; border-bottom: 1px solid var(--color-border);">일반과세</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border);">14.0%</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border);">1.4%</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border); font-weight: 600;">15.4%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border-bottom: 1px solid var(--color-border);">세금우대 (저율과세)</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border);">0%</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border);">1.4%</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border); font-weight: 600;">1.4%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border-bottom: 1px solid var(--color-border);">비과세</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border);">0%</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border);">0%</td>
+                  <td style="padding: 10px; text-align: right; border-bottom: 1px solid var(--color-border); font-weight: 600;">0%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="notice disclaimer" style="text-align: left; margin-top: 8px;">
+            * <b>세금우대(1.4%)</b>: 상호금융(농·수·신협, 새마을금고) 조합원 가입 시 1인당 합계 3,000만원 한도 적용.<br>
+            * <b>비과세(0%)</b>: 만 65세 이상, 장애인 등 1인당 합계 5,000만원 한도 적용.
+          </p>
+        </div>
       </section>
 
       <!-- 6. 세금 지식 창고 (블로그) -->

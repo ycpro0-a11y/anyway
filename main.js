@@ -254,21 +254,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const termInput = document.getElementById('sav-term');
     const rateInput = document.getElementById('sav-rate');
     const resultArea = document.getElementById('sav-result');
+    const detailsEl = document.getElementById('sav-result-details');
+    
     const calc = () => {
       const months = parseInt(termInput.value);
       const rate = parseFloat(rateInput.value);
       if (!savAmount || !months || !rate) { resultArea.style.display = 'none'; return; }
+      
       const type = document.querySelector('input[name="sav-type"]:checked').value;
+      const taxType = document.querySelector('input[name="sav-tax-type"]:checked').value;
+      
       let interest = 0;
-      if (type === 'installment') interest = savAmount * (rate/100/12) * (months * (months + 1) / 2);
-      else interest = savAmount * (rate/100) * (months / 12);
-      const afterTax = interest * 0.846;
-      document.getElementById('sav-total-receive').innerHTML = `${formatCurrency((type === 'installment' ? savAmount * months : savAmount) + afterTax)} <span class="unit">원</span>`;
+      let totalPrincipal = 0;
+      
+      if (type === 'installment') {
+        interest = savAmount * (rate/100/12) * (months * (months + 1) / 2);
+        totalPrincipal = savAmount * months;
+      } else {
+        interest = savAmount * (rate/100) * (months / 12);
+        totalPrincipal = savAmount;
+      }
+      
+      let taxRate = 0.154;
+      if (taxType === 'prefer') taxRate = 0.014;
+      else if (taxType === 'free') taxRate = 0;
+      
+      const taxAmount = Math.floor(interest * taxRate);
+      const netInterest = interest - taxAmount;
+      const totalReceive = totalPrincipal + netInterest;
+      
+      document.getElementById('sav-total-receive').innerHTML = `${formatCurrency(totalReceive)} <span class="unit">원</span>`;
+      
+      detailsEl.innerHTML = `
+        <div class="row"><span>총 납입 원금</span><span>${formatCurrency(totalPrincipal)} 원</span></div>
+        <div class="row"><span>세전 이자</span><span>${formatCurrency(interest)} 원</span></div>
+        <div class="row"><span>이자소득세 (${(taxRate * 100).toFixed(1)}%)</span><span>-${formatCurrency(taxAmount)} 원</span></div>
+        <div class="row"><span>세후 이자</span><span>${formatCurrency(netInterest)} 원</span></div>
+      `;
+      
       resultArea.style.display = 'block';
     };
-    amtInput.addEventListener('input', (e) => { savAmount = parseNum(e.target.value); e.target.value = savAmount ? formatCurrency(savAmount) : ''; calc(); });
+    
+    amtInput.addEventListener('input', (e) => { 
+      savAmount = parseNum(e.target.value); 
+      e.target.value = savAmount ? formatCurrency(savAmount) : ''; 
+      calc(); 
+    });
+    
     [termInput, rateInput].forEach(i => i.addEventListener('input', calc));
-    document.querySelectorAll('input[name="sav-type"]').forEach(r => r.addEventListener('change', calc));
+    document.querySelectorAll('input[name="sav-type"], input[name="sav-tax-type"]').forEach(r => r.addEventListener('change', calc));
   };
 
   // 5. 세금 계산기 (정밀 로직)
