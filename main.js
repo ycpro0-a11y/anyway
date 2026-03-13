@@ -474,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
               else if (taxBase <= 5000000000) compTax = 35600000 + (taxBase - 2500000000) * 0.03;
               else if (taxBase <= 9400000000) compTax = 110600000 + (taxBase - 5000000000) * 0.04;
               else compTax = 286600000 + (taxBase - 9400000000) * 0.05;
-              compMsg = (compMsg ? compMsg + ' / ' : '') + '개인 3주택 중과세율';
+              compMsg = (compMsg ? compMsg + ' / ' : '') + '개인 3주택 중과세율 (0.5~5.0%)';
             } else {
               if (taxBase <= 300000000) compTax = taxBase * 0.005;
               else if (taxBase <= 600000000) compTax = 1500000 + (taxBase - 300000000) * 0.007;
@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
               else if (taxBase <= 5000000000) compTax = 26500000 + (taxBase - 2500000000) * 0.015;
               else if (taxBase <= 9400000000) compTax = 64000000 + (taxBase - 5000000000) * 0.02;
               else compTax = 152000000 + (taxBase - 9400000000) * 0.027;
-              compMsg = (compMsg ? compMsg + ' / ' : '') + '개인 일반세율';
+              compMsg = (compMsg ? compMsg + ' / ' : '') + '개인 일반세율 (0.5~2.7%)';
             }
           } else {
             // 법인 주택 로직
