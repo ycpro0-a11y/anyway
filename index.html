@@ -399,13 +399,19 @@
                 </div>
               </div>
               <div class="input-group">
+                <label for="gain-rental-region">임대주택 소재지</label>
+                <select id="gain-rental-region" class="select-field">
+                  <option value="capital" selected>수도권 (서울/경기/인천)</option>
+                  <option value="non-capital">비수도권 (지방)</option>
+                </select>
+              </div>
+              <div class="input-group">
                 <label for="gain-rental-price">임대개시 시점 공시가격</label>
                 <div class="input-wrapper">
                   <input type="text" id="gain-rental-price" placeholder="수도권 6억/지방 3억 이하">
                   <span class="currency">원</span>
                 </div>
-              </div>
-              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
+              </div>              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
                 * 임대료 증액 5% 제한 준수 시에만 혜택이 적용됩니다.
               </p>
             </div>

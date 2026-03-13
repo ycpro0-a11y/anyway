@@ -569,36 +569,41 @@ document.addEventListener('DOMContentLoaded', () => {
           
           let finalRate = rate;
           let isSurchargeApplied = false;
-          const isSurchargeSuspended = true; 
+          const isSurchargeSuspended = true; // 2026.05.09까지 유예
 
-          if (isReg && asset !== 'house1' && !isSurchargeSuspended) {
-            if (!isRental) {
-              if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
-              else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
+          if (isRental) {
+            // 임대사업자 요건 체크 (가격 및 등록기간)
+            const regDate = document.getElementById('gain-rental-reg-date').value;
+            const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
+            const rentalPrice = parseNum(document.getElementById('gain-rental-price').value);
+            const rentalRegion = document.getElementById('gain-rental-region').value;
+            const priceLimit = rentalRegion === 'capital' ? 600000000 : 300000000;
+            
+            let qualifiesForExclusion = false;
+            if (rentalPrice > 0 && rentalPrice <= priceLimit) {
+              if (regDate === 'pre202007' && rentalYears >= 5) qualifiesForExclusion = true;
+              else if (regDate === 'mid202007' && rentalYears >= 8) qualifiesForExclusion = true;
+              else if (regDate === 'post202008' && rentalYears >= 10) qualifiesForExclusion = true;
+            }
+            
+            if (qualifiesForExclusion) {
+              rentalMsg = '임대사업자 중과배제 요건 충족 (영구 배제)';
             } else {
-              const regDate = document.getElementById('gain-rental-reg-date').value;
-              const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
-              const rentalPrice = parseNum(document.getElementById('gain-rental-price').value);
-              const isCapitalArea = isReg; 
-              const priceLimit = isCapitalArea ? 600000000 : 300000000;
-              
-              let qualifiesForExclusion = false;
-              if (rentalPrice <= priceLimit) {
-                if (regDate === 'pre202007' && rentalYears >= 5) qualifiesForExclusion = true;
-                else if (regDate === 'mid202007' && rentalYears >= 8) qualifiesForExclusion = true;
-                else if (regDate === 'post202008' && rentalYears >= 10) qualifiesForExclusion = true;
-              }
-              
-              if (!qualifiesForExclusion) {
+              rentalMsg = '임대사업자 요건 미달 (가격 또는 기간)';
+              if (isReg && asset !== 'house1' && !isSurchargeSuspended) {
                 if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
                 else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
-                rentalMsg = '임대사업자 요건 미달(중과 적용)';
-              } else {
-                rentalMsg = '임대사업자 중과배제 적용';
               }
             }
-          } else if (isSurchargeSuspended && asset !== 'house1' && isReg) {
-            rentalMsg = '다주택자 중과 한시적 유예 적용 중 (~2026.05.09)';
+          }
+
+          if (isReg && asset !== 'house1' && !isRental && !isSurchargeSuspended) {
+            if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
+            else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
+          }
+
+          if (isSurchargeSuspended && asset !== 'house1' && isReg && !isSurchargeApplied) {
+            rentalMsg = (rentalMsg ? rentalMsg + ' / ' : '') + '다주택자 중과 한시적 유예 적용 중 (~2026.05.09)';
           }
 
           const mainTax = (taxBase * finalRate) - deduct;
