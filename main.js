@@ -543,71 +543,74 @@ document.addEventListener('DOMContentLoaded', () => {
         let taxableProfit = profit;
         let rentalMsg = '';
 
-        if (asset === 'house1') {
-          if (sell <= 1200000000) return { label: '양도소득세', main: 0, details: '1주택 비과세 대상' };
-          taxableProfit = profit * (sell - 1200000000) / sell;
-        }
+        if (asset === 'house1' && sell <= 1200000000) {
+          res = { label: '양도소득세', main: 0, details: '<span>1세대 1주택 비과세 대상 (양도가액 12억 이하)</span>' };
+        } else {
+          if (asset === 'house1') {
+            taxableProfit = profit * (sell - 1200000000) / sell;
+          }
 
-        let lthdRate = 0;
-        if (asset === 'house1' && hold >= 3) {
-          lthdRate = Math.min(hold * 4, 40) + Math.min(live * 4, 40);
-        } else if (isRental) {
-          const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
-          if (rentalYears >= 10) lthdRate = 70;
-          else if (rentalYears >= 8) lthdRate = 50;
-          else if (hold >= 3) lthdRate = Math.min(hold * 2, 30);
-          rentalMsg = rentalYears >= 8 ? `임대사업자 장특공(${lthdRate}%) 적용` : '';
-        } else if (hold >= 3) {
-          lthdRate = Math.min(hold * 2, 30);
-        }
-        
-        const lthdAmount = taxableProfit * (lthdRate / 100);
-        const taxBase = Math.max(0, taxableProfit - lthdAmount - 2500000);
-        const { rate, deduct } = getIncomeTaxRate(taxBase);
-        
-        let finalRate = rate;
-        let isSurchargeApplied = false;
-        const isSurchargeSuspended = true; 
-
-        if (isReg && asset !== 'house1' && !isSurchargeSuspended) {
-          if (!isRental) {
-            if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
-            else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
-          } else {
-            const regDate = document.getElementById('gain-rental-reg-date').value;
+          let lthdRate = 0;
+          if (asset === 'house1' && hold >= 3) {
+            lthdRate = Math.min(hold * 4, 40) + Math.min(live * 4, 40);
+          } else if (isRental) {
             const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
-            const rentalPrice = parseNum(document.getElementById('gain-rental-price').value);
-            const isCapitalArea = isReg; 
-            const priceLimit = isCapitalArea ? 600000000 : 300000000;
-            
-            let qualifiesForExclusion = false;
-            if (rentalPrice <= priceLimit) {
-              if (regDate === 'pre202007' && rentalYears >= 5) qualifiesForExclusion = true;
-              else if (regDate === 'mid202007' && rentalYears >= 8) qualifiesForExclusion = true;
-              else if (regDate === 'post202008' && rentalYears >= 10) qualifiesForExclusion = true;
-            }
-            
-            if (!qualifiesForExclusion) {
+            if (rentalYears >= 10) lthdRate = 70;
+            else if (rentalYears >= 8) lthdRate = 50;
+            else if (hold >= 3) lthdRate = Math.min(hold * 2, 30);
+            rentalMsg = rentalYears >= 8 ? `임대사업자 장특공(${lthdRate}%) 적용` : '';
+          } else if (hold >= 3) {
+            lthdRate = Math.min(hold * 2, 30);
+          }
+          
+          const lthdAmount = taxableProfit * (lthdRate / 100);
+          const taxBase = Math.max(0, taxableProfit - lthdAmount - 2500000);
+          const { rate, deduct } = getIncomeTaxRate(taxBase);
+          
+          let finalRate = rate;
+          let isSurchargeApplied = false;
+          const isSurchargeSuspended = true; 
+
+          if (isReg && asset !== 'house1' && !isSurchargeSuspended) {
+            if (!isRental) {
               if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
               else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
-              rentalMsg = '임대사업자 요건 미달(중과 적용)';
             } else {
-              rentalMsg = '임대사업자 중과배제 적용';
+              const regDate = document.getElementById('gain-rental-reg-date').value;
+              const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
+              const rentalPrice = parseNum(document.getElementById('gain-rental-price').value);
+              const isCapitalArea = isReg; 
+              const priceLimit = isCapitalArea ? 600000000 : 300000000;
+              
+              let qualifiesForExclusion = false;
+              if (rentalPrice <= priceLimit) {
+                if (regDate === 'pre202007' && rentalYears >= 5) qualifiesForExclusion = true;
+                else if (regDate === 'mid202007' && rentalYears >= 8) qualifiesForExclusion = true;
+                else if (regDate === 'post202008' && rentalYears >= 10) qualifiesForExclusion = true;
+              }
+              
+              if (!qualifiesForExclusion) {
+                if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
+                else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
+                rentalMsg = '임대사업자 요건 미달(중과 적용)';
+              } else {
+                rentalMsg = '임대사업자 중과배제 적용';
+              }
             }
+          } else if (isSurchargeSuspended && asset !== 'house1' && isReg) {
+            rentalMsg = '다주택자 중과 한시적 유예 적용 중 (~2026.05.09)';
           }
-        } else if (isSurchargeSuspended && asset !== 'house1' && isReg) {
-          rentalMsg = '다주택자 중과 한시적 유예 적용 중 (~2026.05.09)';
-        }
 
-        const mainTax = (taxBase * finalRate) - deduct;
-        const localTax = mainTax * 0.1;
-        
-        res = { label: '양도소득세 총합 (지방세 포함)', main: mainTax + localTax, details: `
-          <div class="row"><span>양도차익 (경비제외)</span><span>${formatCurrency(profit)} 원</span></div>
-          <div class="row"><span>장특공 (${lthdRate}%)</span><span>-${formatCurrency(lthdAmount)} 원</span></div>
-          <div class="row"><span>현재 적용 한계세율</span><span>${(finalRate*100).toFixed(0)}%</span></div>
-          ${isSurchargeApplied ? `<div class="row"><span>다주택 중과</span><span>+${((finalRate-rate)*100).toFixed(0)}%p</span></div>` : (rentalMsg ? `<div class="row"><span style="font-size:11px;">혜택안내</span><span style="font-size:11px; color:var(--color-primary);">${rentalMsg}</span></div>` : '')}
-          <div class="row"><span>지방소득세 (10%)</span><span>${formatCurrency(localTax)} 원</span></div>` };
+          const mainTax = (taxBase * finalRate) - deduct;
+          const localTax = mainTax * 0.1;
+          
+          res = { label: '양도소득세 총합 (지방세 포함)', main: mainTax + localTax, details: `
+            <div class="row"><span>양도차익 (경비제외)</span><span>${formatCurrency(profit)} 원</span></div>
+            <div class="row"><span>장특공 (${lthdRate}%)</span><span>-${formatCurrency(lthdAmount)} 원</span></div>
+            <div class="row"><span>현재 적용 한계세율</span><span>${(finalRate*100).toFixed(0)}%</span></div>
+            ${isSurchargeApplied ? `<div class="row"><span>다주택 중과</span><span>+${((finalRate-rate)*100).toFixed(0)}%p</span></div>` : (rentalMsg ? `<div class="row"><span style="font-size:11px;">혜택안내</span><span style="font-size:11px; color:var(--color-primary);">${rentalMsg}</span></div>` : '')}
+            <div class="row"><span>지방소득세 (10%)</span><span>${formatCurrency(localTax)} 원</span></div>` };
+        }
       } else if (type === 'vat') {
         const val = parseNum(document.getElementById('vat-amount').value);
         if (!val) { resultArea.style.display = 'none'; return; }
