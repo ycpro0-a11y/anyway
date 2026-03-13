@@ -446,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let rentalExcludeAmt = 0;
 
         if (assetType === 'house') {
+          const isRental = document.querySelector('input[name="comp-rental"]:checked').value === 'yes';
           if (ownerType === 'ind') {
             // 개인 주택 로직
             const deductInput = document.querySelector('input[name="comp-type"]:checked');
