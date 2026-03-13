@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (taxBase <= 150000000) tax = 30000 + (taxBase - 60000000) * 0.001;
             else if (taxBase <= 300000000) tax = 120000 + (taxBase - 150000000) * 0.002;
             else tax = 420000 + (taxBase - 300000000) * 0.0035;
-            details = `<span>1주택자 특례 적용 (공정비율 ${(ratio * 100).toFixed(0)}%, 특례세율)</span>`;
+            details = `<span>1주택자 특례세율 적용 (0.05%~0.35%, 공정비율 ${(ratio * 100).toFixed(0)}%)</span>`;
           } else {
             // 다주택자/법인 60%
             ratio = 0.6;
@@ -391,29 +391,29 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (taxBase <= 150000000) tax = 60000 + (taxBase - 60000000) * 0.0015;
             else if (taxBase <= 300000000) tax = 195000 + (taxBase - 150000000) * 0.0025;
             else tax = 570000 + (taxBase - 300000000) * 0.004;
-            details = `<span>일반 주택 적용 (공정비율 60%, 일반세율)</span>`;
+            details = `<span>일반세율 적용 (0.1%~0.4%, 공정비율 60%)</span>`;
           }
         } else {
           ratio = 0.7;
           const taxBase = val * ratio;
           if (assetType === 'building') {
             tax = taxBase * 0.0025;
-            details = `<span>일반 건축물 (공정비율 70%, 세율 0.25%)</span>`;
+            details = `<span>일반 건축물 (세율 0.25%, 공정비율 70%)</span>`;
           } else if (assetType === 'land') {
             const landType = document.getElementById('prop-land-type').value;
             if (landType === 'gen') {
               if (taxBase <= 50000000) tax = taxBase * 0.002;
               else if (taxBase <= 100000000) tax = 100000 + (taxBase - 50000000) * 0.003;
               else tax = 250000 + (taxBase - 100000000) * 0.005;
-              details = `<span>토지 종합합산 (공정비율 70%, 0.2~0.5%)</span>`;
+              details = `<span>토지 종합합산 (세율 0.2%~0.5%, 공정비율 70%)</span>`;
             } else if (landType === 'sep') {
               if (taxBase <= 200000000) tax = taxBase * 0.002;
               else if (taxBase <= 1000000000) tax = 400000 + (taxBase - 200000000) * 0.003;
               else tax = 2800000 + (taxBase - 1000000000) * 0.004;
-              details = `<span>토지 별도합산 (공정비율 70%, 0.2~0.4%)</span>`;
+              details = `<span>토지 별도합산 (세율 0.2%~0.4%, 공정비율 70%)</span>`;
             } else {
               tax = taxBase * 0.0007;
-              details = `<span>토지 분리과세 (공정비율 70%, 0.07%)</span>`;
+              details = `<span>토지 분리과세 (세율 0.07%, 공정비율 70%)</span>`;
             }
           }
         }
