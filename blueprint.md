@@ -39,4 +39,4 @@
 - [x] Blueprint 업데이트
 - [x] index.html 업데이트: 광고 레이아웃 제거 및 UI 최적화
 - [x] main.js 업데이트: 광고 관련 웹 컴포넌트 로직 제거
-- [ ] GitHub 저장소 배포 (Push).
+- [x] GitHub 저장소 배포 (Push).

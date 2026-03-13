@@ -663,6 +663,14 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('comp-ind-house-option').style.display = (isHouse && e.target.value === 'ind' ? 'block' : 'none');
           document.getElementById('comp-corp-house-option').style.display = (isHouse && e.target.value === 'corp' ? 'block' : 'none');
         }
+        if (el.name === 'comp-type') {
+          const is1House = e.target.value === '1200000000';
+          const multiRadios = document.querySelectorAll('input[name="comp-multi"]');
+          multiRadios.forEach(r => {
+            r.disabled = is1House;
+            if (is1House && r.value === 'no') r.checked = true;
+          });
+        }
         if (el.id === 'comp-asset-type') {
           const ownerType = document.querySelector('input[name="comp-owner"]:checked').value;
           document.getElementById('comp-house-option').style.display = (e.target.value === 'house' ? 'block' : 'none');
