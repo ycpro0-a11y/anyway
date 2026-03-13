@@ -299,12 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return { rate: 0.45, deduct: 65940000 };
     };
 
-    const getPropTaxRate = (base) => {
-      if (base <= 100000000) return base * 0.1;
-      if (base <= 500000000) return base * 0.2 - 10000000;
-      if (base <= 1000000000) return base * 0.3 - 60000000;
-      if (base <= 3000000000) return base * 0.4 - 160000000;
-      return base * 0.5 - 460000000;
+    const getPropTaxRateInfo = (base) => {
+      if (base <= 100000000) return { rate: 0.1, deduct: 0, text: '10%' };
+      if (base <= 500000000) return { rate: 0.2, deduct: 10000000, text: '20%' };
+      if (base <= 1000000000) return { rate: 0.3, deduct: 60000000, text: '30%' };
+      if (base <= 3000000000) return { rate: 0.4, deduct: 160000000, text: '40%' };
+      return { rate: 0.5, deduct: 460000000, text: '50%' };
     };
 
     const calc = () => {
@@ -319,11 +319,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!total) { resultArea.style.display = 'none'; return; }
         const perPerson = total / children;
         const perTaxBase = Math.max(0, perPerson - deduct);
-        const perTax = getPropTaxRate(perTaxBase) * 0.97;
+        const rateInfo = getPropTaxRateInfo(perTaxBase);
+        const perTax = (perTaxBase * rateInfo.rate - rateInfo.deduct) * 0.97;
         const totalGiftTax = perTax * children;
         const acqTax = prop * 0.04;
         res = { label: '총 납부 세액 (증여+취득)', main: totalGiftTax + acqTax, details: `
           <div class="row"><span>증여세율</span><span>10~50% (누진)</span></div>
+          <div class="row"><span>현재 적용 세율</span><span>${rateInfo.text}</span></div>
           <div class="row"><span>증여세 (총합)</span><span>${formatCurrency(totalGiftTax)} 원</span></div>
           <div class="row"><span>증여취득세 (4%)</span><span>${formatCurrency(acqTax)} 원</span></div>` };
       } else if (type === 'inherit') {
@@ -336,10 +338,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (family === 'both') deduct = 1000000000;
         else if (family === 'spouse') deduct = 700000000;
         const base = Math.max(0, total - deduct);
-        const totalInheritTax = getPropTaxRate(base) * 0.97;
+        const rateInfo = getPropTaxRateInfo(base);
+        const totalInheritTax = (base * rateInfo.rate - rateInfo.deduct) * 0.97;
         const acqTax = prop * 0.0316;
         res = { label: '총 상속 관련 세액', main: totalInheritTax + acqTax, details: `
           <div class="row"><span>상속세율</span><span>10~50% (누진)</span></div>
+          <div class="row"><span>현재 적용 세율</span><span>${rateInfo.text}</span></div>
           <div class="row"><span>상속세액</span><span>${formatCurrency(totalInheritTax)} 원</span></div>
           <div class="row"><span>상속취득세 (3.16%)</span><span>${formatCurrency(acqTax)} 원</span></div>` };
       } else if (type === 'acq') {
@@ -354,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const agriRate = (val > 85000000) ? 0.002 : 0;
         const totalAcq = mainTax + (val * eduRate) + (val * agriRate);
         res = { label: '취득세 총합 (지방세 포함)', main: totalAcq, details: `
-          <div class="row"><span>취득세율</span><span>${(rate*100).toFixed(1)}%</span></div>
+          <div class="row"><span>현재 적용 취득세율</span><span>${(rate*100).toFixed(1)}%</span></div>
           <div class="row"><span>지방교육세</span><span>${formatCurrency(val * eduRate)} 원</span></div>
           <div class="row"><span>농어촌특별세</span><span>${formatCurrency(val * agriRate)} 원</span></div>` };
       } else if (type === 'prop') {
@@ -364,34 +368,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let tax = 0;
         let details = '';
-        let ratio = 0.7; // 기본 건축물/토지 70%
+        let ratio = 0.7; 
+        let currentRateText = '';
 
         if (assetType === 'house') {
           const isH1 = document.querySelector('input[name="prop-h1"]:checked').value === 'yes';
           
           if (isH1) {
-            // 1주택 특례 공정시장가액비율 (2026 기준 세분화)
             if (val <= 300000000) ratio = 0.43;
             else if (val <= 600000000) ratio = 0.44;
             else ratio = 0.45;
             
             const taxBase = val * ratio;
-            // 1주택 특례세율 (0.05% ~ 0.35%)
-            if (taxBase <= 60000000) tax = taxBase * 0.0005;
-            else if (taxBase <= 150000000) tax = 30000 + (taxBase - 60000000) * 0.001;
-            else if (taxBase <= 300000000) tax = 120000 + (taxBase - 150000000) * 0.002;
-            else tax = 420000 + (taxBase - 300000000) * 0.0035;
-            details = `<span>1주택자 특례세율 적용 (0.05%~0.35%, 공정비율 ${(ratio * 100).toFixed(0)}%)</span>`;
+            if (taxBase <= 60000000) { tax = taxBase * 0.0005; currentRateText = '0.05%'; }
+            else if (taxBase <= 150000000) { tax = 30000 + (taxBase - 60000000) * 0.001; currentRateText = '0.1%'; }
+            else if (taxBase <= 300000000) { tax = 120000 + (taxBase - 150000000) * 0.002; currentRateText = '0.2%'; }
+            else { tax = 420000 + (taxBase - 300000000) * 0.0035; currentRateText = '0.35%'; }
+            details = `<span>1주택자 특례세율 적용 (${currentRateText}, 공정비율 ${(ratio * 100).toFixed(0)}%)</span>`;
           } else {
-            // 다주택자/법인 60%
             ratio = 0.6;
             const taxBase = val * ratio;
-            // 일반세율 (0.1% ~ 0.4%)
-            if (taxBase <= 60000000) tax = taxBase * 0.001;
-            else if (taxBase <= 150000000) tax = 60000 + (taxBase - 60000000) * 0.0015;
-            else if (taxBase <= 300000000) tax = 195000 + (taxBase - 150000000) * 0.0025;
-            else tax = 570000 + (taxBase - 300000000) * 0.004;
-            details = `<span>일반세율 적용 (0.1%~0.4%, 공정비율 60%)</span>`;
+            if (taxBase <= 60000000) { tax = taxBase * 0.001; currentRateText = '0.1%'; }
+            else if (taxBase <= 150000000) { tax = 60000 + (taxBase - 60000000) * 0.0015; currentRateText = '0.15%'; }
+            else if (taxBase <= 300000000) { tax = 195000 + (taxBase - 150000000) * 0.0025; currentRateText = '0.25%'; }
+            else { tax = 570000 + (taxBase - 300000000) * 0.004; currentRateText = '0.4%'; }
+            details = `<span>일반세율 적용 (${currentRateText}, 공정비율 60%)</span>`;
           }
         } else {
           ratio = 0.7;
@@ -402,15 +403,15 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (assetType === 'land') {
             const landType = document.getElementById('prop-land-type').value;
             if (landType === 'gen') {
-              if (taxBase <= 50000000) tax = taxBase * 0.002;
-              else if (taxBase <= 100000000) tax = 100000 + (taxBase - 50000000) * 0.003;
-              else tax = 250000 + (taxBase - 100000000) * 0.005;
-              details = `<span>토지 종합합산 (세율 0.2%~0.5%, 공정비율 70%)</span>`;
+              if (taxBase <= 50000000) { tax = taxBase * 0.002; currentRateText = '0.2%'; }
+              else if (taxBase <= 100000000) { tax = 100000 + (taxBase - 50000000) * 0.003; currentRateText = '0.3%'; }
+              else { tax = 250000 + (taxBase - 100000000) * 0.005; currentRateText = '0.5%'; }
+              details = `<span>토지 종합합산 (세율 ${currentRateText}, 공정비율 70%)</span>`;
             } else if (landType === 'sep') {
-              if (taxBase <= 200000000) tax = taxBase * 0.002;
-              else if (taxBase <= 1000000000) tax = 400000 + (taxBase - 200000000) * 0.003;
-              else tax = 2800000 + (taxBase - 1000000000) * 0.004;
-              details = `<span>토지 별도합산 (세율 0.2%~0.4%, 공정비율 70%)</span>`;
+              if (taxBase <= 200000000) { tax = taxBase * 0.002; currentRateText = '0.2%'; }
+              else if (taxBase <= 1000000000) { tax = 400000 + (taxBase - 200000000) * 0.003; currentRateText = '0.3%'; }
+              else { tax = 2800000 + (taxBase - 1000000000) * 0.004; currentRateText = '0.4%'; }
+              details = `<span>토지 별도합산 (세율 ${currentRateText}, 공정비율 70%)</span>`;
             } else {
               tax = taxBase * 0.0007;
               details = `<span>토지 분리과세 (세율 0.07%, 공정비율 70%)</span>`;
@@ -418,7 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // 공통 부가세 계산 (도시지역분 0.14%는 과표 기준)
         const eduTax = tax * 0.2;
         const cityTax = val * ratio * 0.0014;
         const totalPropTax = tax + eduTax + cityTax;
@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="row"><span style="font-size:11px; color:var(--color-primary);">${details}</span></div>` 
         };
       } else if (type === 'comp') {
-        const ownerType = document.querySelector('input[name="comp-owner"]:checked').value; // ind or corp
+        const ownerType = document.querySelector('input[name="comp-owner"]:checked').value; 
         const assetType = document.getElementById('comp-asset-type').value;
         const val = parseNum(document.getElementById('comp-value').value);
         
@@ -444,11 +444,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let compTax = 0;
         let compMsg = '';
         let rentalExcludeAmt = 0;
+        let currentRateText = '';
 
         if (assetType === 'house') {
           const isRental = document.querySelector('input[name="comp-rental"]:checked').value === 'yes';
           if (ownerType === 'ind') {
-            // 개인 주택 로직
             const deductInput = document.querySelector('input[name="comp-type"]:checked');
             actualDeduct = deductInput ? parseInt(deductInput.value) : 0;
             const isMulti = document.querySelector('input[name="comp-multi"]:checked').value === 'yes';
@@ -467,62 +467,60 @@ document.addEventListener('DOMContentLoaded', () => {
             const taxBase = Math.max(0, (val - rentalExcludeAmt - actualDeduct) * ratio);
             
             if (isMulti && taxBase > 1200000000) {
-              if (taxBase <= 300000000) compTax = taxBase * 0.005;
-              else if (taxBase <= 600000000) compTax = 1500000 + (taxBase - 300000000) * 0.007;
-              else if (taxBase <= 1200000000) compTax = 3600000 + (taxBase - 600000000) * 0.01;
-              else if (taxBase <= 2500000000) compTax = 9600000 + (taxBase - 1200000000) * 0.02;
-              else if (taxBase <= 5000000000) compTax = 35600000 + (taxBase - 2500000000) * 0.03;
-              else if (taxBase <= 9400000000) compTax = 110600000 + (taxBase - 5000000000) * 0.04;
-              else compTax = 286600000 + (taxBase - 9400000000) * 0.05;
-              compMsg = (compMsg ? compMsg + ' / ' : '') + '개인 3주택 중과세율 (0.5~5.0%)';
+              if (taxBase <= 300000000) { compTax = taxBase * 0.005; currentRateText = '0.5%'; }
+              else if (taxBase <= 600000000) { compTax = 1500000 + (taxBase - 300000000) * 0.007; currentRateText = '0.7%'; }
+              else if (taxBase <= 1200000000) { compTax = 3600000 + (taxBase - 600000000) * 0.01; currentRateText = '1.0%'; }
+              else if (taxBase <= 2500000000) { compTax = 9600000 + (taxBase - 1200000000) * 0.02; currentRateText = '2.0%'; }
+              else if (taxBase <= 5000000000) { compTax = 35600000 + (taxBase - 2500000000) * 0.03; currentRateText = '3.0%'; }
+              else if (taxBase <= 9400000000) { compTax = 110600000 + (taxBase - 5000000000) * 0.04; currentRateText = '4.0%'; }
+              else { compTax = 286600000 + (taxBase - 9400000000) * 0.05; currentRateText = '5.0%'; }
+              compMsg = (compMsg ? compMsg + ' / ' : '') + `개인 3주택 중과세율 적용 (현재구간 ${currentRateText})`;
             } else {
-              if (taxBase <= 300000000) compTax = taxBase * 0.005;
-              else if (taxBase <= 600000000) compTax = 1500000 + (taxBase - 300000000) * 0.007;
-              else if (taxBase <= 1200000000) compTax = 3600000 + (taxBase - 600000000) * 0.01;
-              else if (taxBase <= 2500000000) compTax = 9600000 + (taxBase - 1200000000) * 0.013;
-              else if (taxBase <= 5000000000) compTax = 26500000 + (taxBase - 2500000000) * 0.015;
-              else if (taxBase <= 9400000000) compTax = 64000000 + (taxBase - 5000000000) * 0.02;
-              else compTax = 152000000 + (taxBase - 9400000000) * 0.027;
-              compMsg = (compMsg ? compMsg + ' / ' : '') + '개인 일반세율 (0.5~2.7%)';
+              if (taxBase <= 300000000) { compTax = taxBase * 0.005; currentRateText = '0.5%'; }
+              else if (taxBase <= 600000000) { compTax = 1500000 + (taxBase - 300000000) * 0.007; currentRateText = '0.7%'; }
+              else if (taxBase <= 1200000000) { compTax = 3600000 + (taxBase - 600000000) * 0.01; currentRateText = '1.0%'; }
+              else if (taxBase <= 2500000000) { compTax = 9600000 + (taxBase - 1200000000) * 0.013; currentRateText = '1.3%'; }
+              else if (taxBase <= 5000000000) { compTax = 26500000 + (taxBase - 2500000000) * 0.015; currentRateText = '1.5%'; }
+              else if (taxBase <= 9400000000) { compTax = 64000000 + (taxBase - 5000000000) * 0.02; currentRateText = '2.0%'; }
+              else { compTax = 152000000 + (taxBase - 9400000000) * 0.027; currentRateText = '2.7%'; }
+              compMsg = (compMsg ? compMsg + ' / ' : '') + `개인 일반세율 적용 (현재구간 ${currentRateText})`;
             }
           } else {
-            // 법인 주택 로직
             const isSpecial = document.querySelector('input[name="comp-corp-sp"]:checked').value === 'yes';
             if (isSpecial) {
-              actualDeduct = 900000000; // 특례 법인 9억 공제
+              actualDeduct = 900000000; 
               const taxBase = Math.max(0, (val - actualDeduct) * ratio);
-              // 개인 다주택 일반세율 적용
-              if (taxBase <= 300000000) compTax = taxBase * 0.005;
-              else if (taxBase <= 600000000) compTax = 1500000 + (taxBase - 300000000) * 0.007;
-              else if (taxBase <= 1200000000) compTax = 3600000 + (taxBase - 600000000) * 0.01;
-              else if (taxBase <= 2500000000) compTax = 9600000 + (taxBase - 1200000000) * 0.013;
-              else if (taxBase <= 5000000000) compTax = 26500000 + (taxBase - 2500000000) * 0.015;
-              else if (taxBase <= 9400000000) compTax = 64000000 + (taxBase - 5000000000) * 0.02;
-              else compTax = 152000000 + (taxBase - 9400000000) * 0.027;
-              compMsg = '특례법인 (9억 공제, 누진세율)';
+              if (taxBase <= 300000000) { compTax = taxBase * 0.005; currentRateText = '0.5%'; }
+              else if (taxBase <= 600000000) { compTax = 1500000 + (taxBase - 300000000) * 0.007; currentRateText = '0.7%'; }
+              else if (taxBase <= 1200000000) { compTax = 3600000 + (taxBase - 600000000) * 0.01; currentRateText = '1.0%'; }
+              else if (taxBase <= 2500000000) { compTax = 9600000 + (taxBase - 1200000000) * 0.013; currentRateText = '1.3%'; }
+              else if (taxBase <= 5000000000) { compTax = 26500000 + (taxBase - 2500000000) * 0.015; currentRateText = '1.5%'; }
+              else if (taxBase <= 9400000000) { compTax = 64000000 + (taxBase - 5000000000) * 0.02; currentRateText = '2.0%'; }
+              else { compTax = 152000000 + (taxBase - 9400000000) * 0.027; currentRateText = '2.7%'; }
+              compMsg = `특례법인 누진세율 적용 (현재구간 ${currentRateText})`;
             } else {
-              actualDeduct = 0; // 일반법인 공제 없음
+              actualDeduct = 0; 
               const isMulti = document.querySelector('input[name="comp-corp-multi"]:checked').value === 'yes';
               const taxBase = val * ratio;
-              const rate = isMulti ? 0.05 : 0.027; // 5.0% or 2.7%
+              const rate = isMulti ? 0.05 : 0.027; 
               compTax = taxBase * rate;
-              compMsg = `일반법인 (${isMulti ? '3주택↑ 5.0%' : '2주택↓ 2.7%'} 단일세율)`;
+              compMsg = `일반법인 단일세율 적용 (${isMulti ? '5.0%' : '2.7%'})`;
             }
           }
         } else if (assetType === 'land_gen') {
           actualDeduct = 500000000;
           const taxBase = Math.max(0, (val - actualDeduct) * ratio);
-          if (taxBase <= 1500000000) compTax = taxBase * 0.01;
-          else if (taxBase <= 4500000000) compTax = 15000000 + (taxBase - 1500000000) * 0.02;
-          else compTax = 75000000 + (taxBase - 4500000000) * 0.03;
-          compMsg = '종합합산 토지 세율(1~3%)';
+          if (taxBase <= 1500000000) { compTax = taxBase * 0.01; currentRateText = '1.0%'; }
+          else if (taxBase <= 4500000000) { compTax = 15000000 + (taxBase - 1500000000) * 0.02; currentRateText = '2.0%'; }
+          else { compTax = 75000000 + (taxBase - 4500000000) * 0.03; currentRateText = '3.0%'; }
+          compMsg = `종합합산 토지 세율 적용 (현재구간 ${currentRateText})`;
         } else if (assetType === 'land_sep') {
           actualDeduct = 8000000000;
           const taxBase = Math.max(0, (val - actualDeduct) * ratio);
-          if (taxBase <= 20000000000) compTax = taxBase * 0.005;
-          else if (taxBase <= 40000000000) compTax = 100000000 + (taxBase - 20000000000) * 0.006;
-          else compTax = 220000000 + (taxBase - 40000000000) * 0.007;
-          compMsg = '별도합산 토지 세율(0.5~0.7%)';
+          if (taxBase <= 20000000000) { compTax = taxBase * 0.005; currentRateText = '0.5%'; }
+          else if (taxBase <= 40000000000) { compTax = 100000000 + (taxBase - 20000000000) * 0.006; currentRateText = '0.6%'; }
+          else { compTax = 220000000 + (taxBase - 40000000000) * 0.007; currentRateText = '0.7%'; }
+          compMsg = `별도합산 토지 세율 적용 (현재구간 ${currentRateText})`;
         }
 
         res = { label: `종부세 총합 (${ownerType === 'ind' ? '개인' : '법인'})`, main: compTax, details: `
@@ -545,13 +543,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let taxableProfit = profit;
         let rentalMsg = '';
 
-        // 1주택 비과세
         if (asset === 'house1') {
           if (sell <= 1200000000) return { label: '양도소득세', main: 0, details: '1주택 비과세 대상' };
           taxableProfit = profit * (sell - 1200000000) / sell;
         }
 
-        // 장기보유특별공제
         let lthdRate = 0;
         if (asset === 'house1' && hold >= 3) {
           lthdRate = Math.min(hold * 4, 40) + Math.min(live * 4, 40);
@@ -571,21 +567,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let finalRate = rate;
         let isSurchargeApplied = false;
-        
-        // 다주택자 중과 (2026.05.09까지는 한시적 유예 상태이나, 로직상 조건 체크)
-        // 현재 날짜 기준(2026.03.12) 유예 기간 내이므로 기본세율 적용이 기본이나, 임대사업자 요건 충족 시 영구 배제
-        const isSurchargeSuspended = true; // 2026.05.09까지 유예
+        const isSurchargeSuspended = true; 
 
         if (isReg && asset !== 'house1' && !isSurchargeSuspended) {
           if (!isRental) {
             if (asset === 'house2') { finalRate += 0.2; isSurchargeApplied = true; }
             else if (asset === 'house3') { finalRate += 0.3; isSurchargeApplied = true; }
           } else {
-            // 임대사업자 중과배제 요건 체크
             const regDate = document.getElementById('gain-rental-reg-date').value;
             const rentalYears = parseInt(document.getElementById('gain-rental-years').value) || 0;
             const rentalPrice = parseNum(document.getElementById('gain-rental-price').value);
-            const isCapitalArea = isReg; // 조정지역=수도권 가정(단순화)
+            const isCapitalArea = isReg; 
             const priceLimit = isCapitalArea ? 600000000 : 300000000;
             
             let qualifiesForExclusion = false;
@@ -613,13 +605,13 @@ document.addEventListener('DOMContentLoaded', () => {
         res = { label: '양도소득세 총합 (지방세 포함)', main: mainTax + localTax, details: `
           <div class="row"><span>양도차익 (경비제외)</span><span>${formatCurrency(profit)} 원</span></div>
           <div class="row"><span>장특공 (${lthdRate}%)</span><span>-${formatCurrency(lthdAmount)} 원</span></div>
-          <div class="row"><span>기본세율</span><span>${(rate*100).toFixed(0)}%</span></div>
+          <div class="row"><span>현재 적용 한계세율</span><span>${(finalRate*100).toFixed(0)}%</span></div>
           ${isSurchargeApplied ? `<div class="row"><span>다주택 중과</span><span>+${((finalRate-rate)*100).toFixed(0)}%p</span></div>` : (rentalMsg ? `<div class="row"><span style="font-size:11px;">혜택안내</span><span style="font-size:11px; color:var(--color-primary);">${rentalMsg}</span></div>` : '')}
           <div class="row"><span>지방소득세 (10%)</span><span>${formatCurrency(localTax)} 원</span></div>` };
       } else if (type === 'vat') {
         const val = parseNum(document.getElementById('vat-amount').value);
         if (!val) { resultArea.style.display = 'none'; return; }
-        res = { label: '부가가치세액', main: Math.floor(val / 11), details: `<span>세율: 10% (포함 기준 계산)</span>` };
+        res = { label: '부가가치세액', main: Math.floor(val / 11), details: `<span>적용 세율: 10% (포함 기준 계산)</span>` };
       }
 
       if (res) {
