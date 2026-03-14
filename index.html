@@ -53,6 +53,7 @@
                 <input type="text" id="gift-amount" placeholder="전체 증여액">
                 <span class="currency">원</span>
               </div>
+              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">* 전체 금액을 아래 인원수로 균등하게 분할하여 계산합니다.</p>
             </div>
             <div class="input-group">
               <label for="gift-prop-amount">이 중 부동산 가액 (선택)</label>
@@ -62,22 +63,21 @@
               </div>
             </div>
             <div class="input-group">
-              <label for="gift-children">수증 자녀 수 (분할 증여)</label>
-              <select id="gift-children" class="select-field">
-                <option value="1">1명 (단독)</option>
-                <option value="2">2명 (각 1/2)</option>
-                <option value="3">3명 (각 1/3)</option>
+              <label for="gift-relation">수증자와의 관계 (인당 공제액 결정)</label>
+              <select id="gift-relation" class="select-field">
+                <option value="spouse">배우자 (6억 공제)</option>
+                <option value="adult-child" selected>성인자녀 (5천만 공제)</option>
+                <option value="minor-child">미성년자녀 (2천만 공제)</option>
+                <option value="relative">형제자매/기타친족 (2천만 공제)</option>
+                <option value="other">타인 (공제 없음)</option>
               </select>
             </div>
             <div class="input-group">
-              <label for="gift-relation">증여자와의 관계 (인당 적용)</label>
-              <select id="gift-relation" class="select-field">
-                <option value="600000000">배우자 (6억 공제)</option>
-                <option value="50000000" selected>성인자녀 (5천만 공제)</option>
-                <option value="20000000">미성년자녀 (2천만 공제)</option>
-                <option value="20000000">기타친족 (2천만 공제)</option>
-                <option value="0">타인 (공제 없음)</option>
-              </select>
+              <label for="gift-count">수증 인원수</label>
+              <div class="input-wrapper">
+                <input type="number" id="gift-count" value="1" min="1">
+                <span class="currency">명</span>
+              </div>
             </div>
           </div>
 
@@ -89,6 +89,7 @@
                 <input type="text" id="inherit-amount" placeholder="채무 제외 순재산">
                 <span class="currency">원</span>
               </div>
+              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">* 장례비용, 채무 등을 제외한 순재산 가액을 입력하세요.</p>
             </div>
             <div class="input-group">
               <label for="inherit-prop-amount">이 중 부동산 가액 (선택)</label>
@@ -98,23 +99,31 @@
               </div>
             </div>
             <div class="input-group">
-              <label>상속인 상황</label>
-              <div class="radio-group">
-                <input type="radio" id="inherit-family1" name="inherit-family" value="both" checked>
-                <label for="inherit-family1">배우자+자녀</label>
-                <input type="radio" id="inherit-family2" name="inherit-family" value="child">
-                <label for="inherit-family2">자녀만</label>
-                <input type="radio" id="inherit-family3" name="inherit-family" value="spouse">
-                <label for="inherit-family3">배우자만</label>
+              <label>상속인 구성</label>
+              <div class="checkbox-group" style="display: flex; gap: 12px; margin-bottom: 8px;">
+                <label style="display: flex; align-items: center; gap: 4px; font-size: 14px;">
+                  <input type="checkbox" id="inherit-has-spouse" checked> 배우자 있음
+                </label>
               </div>
-            </div>
-            <div class="input-group">
-              <label for="inherit-children-count">상속 자녀 수</label>
-              <select id="inherit-children-count" class="select-field">
-                <option value="1">1명</option>
-                <option value="2">2명</option>
-                <option value="3">3명</option>
-              </select>
+              <div class="grid-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="input-item">
+                  <label for="inherit-child-count" style="font-size: 12px; color: var(--color-text-caption);">자녀 수</label>
+                  <input type="number" id="inherit-child-count" value="1" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
+                </div>
+                <div class="input-item">
+                  <label for="inherit-sibling-count" style="font-size: 12px; color: var(--color-text-caption);">형제자매 수</label>
+                  <input type="number" id="inherit-sibling-count" value="0" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
+                </div>
+                <div class="input-item">
+                  <label for="inherit-relative-count" style="font-size: 12px; color: var(--color-text-caption);">4촌이내 혈족</label>
+                  <input type="number" id="inherit-relative-count" value="0" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
+                </div>
+                <div class="input-item">
+                  <label for="inherit-other-count" style="font-size: 12px; color: var(--color-text-caption);">기타 수증자</label>
+                  <input type="number" id="inherit-other-count" value="0" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
+                </div>
+              </div>
+              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 8px;">* 법정 상속 비율(배우자 1.5 : 자녀 1.0)에 따라 세액이 배분됩니다.</p>
             </div>
           </div>
 
