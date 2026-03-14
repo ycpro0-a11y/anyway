@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // 2. 연봉 계산기 (2024-2025 요율 유지)
+  // 2. 연봉 계산기
   let salaryAmount = 0;
   const initSalary = () => {
     const amtInput = document.getElementById('salary-amount');
@@ -249,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         if (!total) { resultArea.style.display = 'none'; return; }
 
-        // 현행 상속세 로직 (2024-2025)
         const personalDeduct = 200000000 + (counts.child * 50000000); 
         const basicOrLumpSum = Math.max(500000000, personalDeduct);
         const spouseDeduct = hasSpouse ? 500000000 : 0;
@@ -258,30 +257,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const base = Math.max(0, total - totalDeduct);
         const rateInfo = getPropTaxRateInfo(base);
         const totalInheritTax = (base * rateInfo.rate - rateInfo.deduct) * 0.97;
-        let totalRatio = (hasSpouse ? 1.5 : 0) + (counts.child * 1.0);
-        if (totalRatio === 0) totalRatio = counts.sibling + counts.relative + counts.other;
 
+        // 모든 입력 항목에 대한 지분 배분 로직 (배우자 1.5, 그외 1.0)
+        let totalRatio = (hasSpouse ? 1.5 : 0) + (counts.child * 1.0) + (counts.sibling * 1.0) + (counts.relative * 1.0) + (counts.other * 1.0);
+        
         let breakdownHtml = '';
-        const addBreakdown = (label, count, ratio) => {
+        const addBreakdown = (label, count, ratioPerPerson) => {
           if (count <= 0 || totalRatio === 0) return;
-          const share = ratio / totalRatio;
+          const share = (ratioPerPerson * count) / totalRatio;
+          const perAmount = (total * share) / count;
+          const perTax = (totalInheritTax * share) / count;
           breakdownHtml += `
             <div style="margin-bottom: 8px; border-bottom: 1px dashed var(--color-border); padding-bottom: 4px;">
               <div class="row"><strong style="font-size:13px; color:var(--color-primary);">${label} (${count}명)</strong></div>
-              <div class="row"><span style="font-size:12px;">인당 상속가액</span><span style="font-size:12px;">${formatCurrency((total * share) / count)} 원</span></div>
-              <div class="row"><span style="font-size:12px;">인당 분담세액</span><span style="font-size:12px; font-weight:600;">${formatCurrency((totalInheritTax * share) / count)} 원</span></div>
+              <div class="row"><span style="font-size:12px;">인당 상속가액</span><span style="font-size:12px;">${formatCurrency(perAmount)} 원</span></div>
+              <div class="row"><span style="font-size:12px;">인당 분담세액</span><span style="font-size:12px; font-weight:600;">${formatCurrency(perTax)} 원</span></div>
             </div>`;
         };
+
         if (hasSpouse) addBreakdown('배우자', 1, 1.5);
-        if (counts.child > 0) addBreakdown('자녀', counts.child, 1.0 * counts.child);
-        if (totalRatio === (counts.sibling + counts.relative + counts.other)) {
-          addBreakdown('형제자매', counts.sibling, counts.sibling);
-          addBreakdown('4촌이내 혈족', counts.relative, counts.relative);
-          addBreakdown('그밖의 상속인', counts.other, counts.other);
-        }
+        if (counts.child > 0) addBreakdown('자녀', counts.child, 1.0);
+        if (counts.sibling > 0) addBreakdown('형제자매', counts.sibling, 1.0);
+        if (counts.relative > 0) addBreakdown('4촌이내 혈족', counts.relative, 1.0);
+        if (counts.other > 0) addBreakdown('그밖의 상속인', counts.other, 1.0);
 
         res = { label: '상속세 정밀 분석 결과 (현행)', main: totalInheritTax + prop * 0.0316, details: `
-          <div class="row"><span>총 공제액 (일괄5억+배우자5억 등)</span><span>${formatCurrency(totalDeduct)} 원</span></div>
+          <div class="row"><span>총 공제액</span><span>${formatCurrency(totalDeduct)} 원</span></div>
           <div style="background: var(--color-background); padding: 10px; border-radius: 8px; margin: 12px 0;">${breakdownHtml}</div>
           <div class="row"><span>상속세 합계</span><strong style="color: var(--color-primary);">${formatCurrency(totalInheritTax)} 원</strong></div>` 
         };
