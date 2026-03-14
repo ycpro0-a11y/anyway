@@ -330,7 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalGiftTax = 0;
         let breakdownHtml = '';
 
-        const deductions = { spouse: 600000000, adultChild: 50000000, minorChild: 20000000, relative: 20000000, other: 0 };
+        // 증여세 인별 공제한도 (10년 합산 기준)
+        const deductions = { spouse: 600000000, adultChild: 50000000, minorChild: 20000000, relative: 10000000, other: 0 };
         const labels = { spouse: '배우자', adultChild: '성인자녀', minorChild: '미성년자녀', relative: '친족', other: '기타' };
 
         Object.keys(counts).forEach(key => {
@@ -380,10 +381,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!total) { resultArea.style.display = 'none'; return; }
 
-        let totalDeduct = 200000000; 
-        if (hasSpouse && counts.child > 0) totalDeduct = 1000000000;
-        else if (hasSpouse) totalDeduct = 700000000;
-        else if (counts.child > 0) totalDeduct = 500000000;
+        // 2026 개정안 기준 상속공제 로직
+        // 1. 기초공제(2억) + 인적공제(자녀 인당 5억) vs 일괄공제(8억) 중 큰 것 선택
+        const personalDeduct = 200000000 + (counts.child * 500000000);
+        const basicOrLumpSum = Math.max(800000000, personalDeduct);
+        
+        // 2. 배우자 상속공제 (최소 10억 보장)
+        const spouseDeduct = hasSpouse ? 1000000000 : 0;
+        
+        const totalDeduct = basicOrLumpSum + spouseDeduct;
 
         const base = Math.max(0, total - totalDeduct);
         const rateInfo = getPropTaxRateInfo(base);
@@ -418,10 +424,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         res = { 
-          label: '상속세 정밀 분석 결과', 
+          label: '상속세 정밀 분석 결과 (2026 개정)', 
           main: totalInheritTax + acqTax, 
           details: `
-          <div class="row"><span>총 공제액</span><span>${formatCurrency(totalDeduct)} 원</span></div>
+          <div class="row"><span>총 공제액 (8억+배우자10억 등)</span><span>${formatCurrency(totalDeduct)} 원</span></div>
           <div style="background: var(--color-background); padding: 10px; border-radius: 8px; margin: 12px 0;">
             <p style="font-size: 11px; color: var(--color-text-caption); margin-bottom: 6px;">상속인별 세부 배분 내역</p>
             ${breakdownHtml}
