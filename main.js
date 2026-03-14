@@ -314,91 +314,131 @@ document.addEventListener('DOMContentLoaded', () => {
       if (type === 'gift') {
         const total = parseNum(document.getElementById('gift-amount').value);
         const prop = parseNum(document.getElementById('gift-prop-amount').value);
-        const relation = document.getElementById('gift-relation').value;
-        const count = parseInt(document.getElementById('gift-count').value) || 1;
         
-        if (!total) { resultArea.style.display = 'none'; return; }
+        // 수증인 인원수 가져오기
+        const counts = {
+          spouse: parseInt(document.getElementById('gift-spouse-count').value) || 0,
+          adultChild: parseInt(document.getElementById('gift-adult-child-count').value) || 0,
+          minorChild: parseInt(document.getElementById('gift-minor-child-count').value) || 0,
+          relative: parseInt(document.getElementById('gift-relative-count').value) || 0,
+          other: parseInt(document.getElementById('gift-other-count').value) || 0
+        };
 
-        let deduct = 0;
-        if (relation === 'spouse') deduct = 600000000;
-        else if (relation === 'adult-child') deduct = 50000000;
-        else if (relation === 'minor-child') deduct = 20000000;
-        else if (relation === 'relative') deduct = 20000000;
-        else deduct = 0;
+        const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
+        if (!total || totalCount === 0) { resultArea.style.display = 'none'; return; }
 
-        const perPersonAmount = total / count;
-        const perTaxBase = Math.max(0, perPersonAmount - deduct);
-        const rateInfo = getPropTaxRateInfo(perTaxBase);
-        const perTax = (perTaxBase * rateInfo.rate - rateInfo.deduct) * 0.97; // 신고세액공제 3% 반영
-        const totalGiftTax = perTax * count;
+        const perPersonAmount = total / totalCount;
+        let totalGiftTax = 0;
+        let deductionLines = [];
+
+        // 관계별 공제액 설정
+        const deductions = {
+          spouse: 600000000,
+          adultChild: 50000000,
+          minorChild: 20000000,
+          relative: 20000000,
+          other: 0
+        };
+
+        const labels = {
+          spouse: '배우자',
+          adultChild: '성인자녀',
+          minorChild: '미성년자녀',
+          relative: '친족',
+          other: '기타'
+        };
+
+        Object.keys(counts).forEach(key => {
+          const count = counts[key];
+          if (count > 0) {
+            const deduct = deductions[key];
+            const perTaxBase = Math.max(0, perPersonAmount - deduct);
+            const rateInfo = getPropTaxRateInfo(perTaxBase);
+            const perTax = (perTaxBase * rateInfo.rate - rateInfo.deduct) * 0.97; // 신고세액공제 3%
+            totalGiftTax += perTax * count;
+            
+            deductionLines.push(`<div class="row"><span style="font-size:12px;">${labels[key]} 공제 (${count}명)</span><span style="font-size:12px;">인당 ${formatCurrency(deduct)} 원</span></div>`);
+          }
+        });
+
         const acqTax = prop * 0.04;
 
         res = { 
           label: '증여세 정밀 분석 결과', 
           main: totalGiftTax + acqTax, 
           details: `
-          <div class="row"><span>수증 인원</span><span>${count} 명</span></div>
+          <div class="row"><span>총 수증 인원</span><span>${totalCount} 명</span></div>
           <div class="row"><span>인당 증여가액</span><span>${formatCurrency(perPersonAmount)} 원</span></div>
-          <div class="row"><span>인당 공제액</span><span>${formatCurrency(deduct)} 원</span></div>
-          <div class="row"><span>적용 세율</span><span>${rateInfo.text}</span></div>
-          <div class="row" style="margin-top: 8px; border-top: 1px dashed var(--color-border); padding-top: 8px;">
-            <strong>인당 예상 증여세</strong>
-            <strong style="color: var(--color-primary);">${formatCurrency(perTax)} 원</strong>
+          <div style="background: var(--color-background); padding: 8px; border-radius: 4px; margin: 8px 0;">
+            ${deductionLines.join('')}
           </div>
-          <div class="row"><span>증여세 합계</span><span>${formatCurrency(totalGiftTax)} 원</span></div>
+          <div class="row" style="margin-top: 8px; border-top: 1px dashed var(--color-border); padding-top: 8px;">
+            <strong>증여세 합계</strong>
+            <strong style="color: var(--color-primary);">${formatCurrency(totalGiftTax)} 원</strong>
+          </div>
           <div class="row"><span>증여취득세 (4%)</span><span>${formatCurrency(acqTax)} 원</span></div>` 
         };
       } else if (type === 'inherit') {
         const total = parseNum(document.getElementById('inherit-amount').value);
         const prop = parseNum(document.getElementById('inherit-prop-amount').value);
         const hasSpouse = document.getElementById('inherit-has-spouse').checked;
-        const childCount = parseInt(document.getElementById('inherit-child-count').value) || 0;
-        const siblingCount = parseInt(document.getElementById('inherit-sibling-count').value) || 0;
-        const relativeCount = parseInt(document.getElementById('inherit-relative-count').value) || 0;
-        const otherCount = parseInt(document.getElementById('inherit-other-count').value) || 0;
+        const counts = {
+          child: parseInt(document.getElementById('inherit-child-count').value) || 0,
+          sibling: parseInt(document.getElementById('inherit-sibling-count').value) || 0,
+          relative: parseInt(document.getElementById('inherit-relative-count').value) || 0,
+          other: parseInt(document.getElementById('inherit-other-count').value) || 0
+        };
 
         if (!total) { resultArea.style.display = 'none'; return; }
 
-        // 상속공제 로직 (단순화)
-        let deduct = 200000000; // 기초공제
-        if (hasSpouse && childCount > 0) {
-          deduct = 1000000000; // 일괄공제 5억 + 배우자공제 최소 5억
+        // 상속공제 나열
+        let deductionDetails = [];
+        let totalDeduct = 200000000; // 기초공제 기본
+        deductionDetails.push(`<div class="row"><span style="font-size:12px;">기초공제</span><span style="font-size:12px;">2억 원</span></div>`);
+
+        if (hasSpouse && counts.child > 0) {
+          totalDeduct = 1000000000; // 일괄공제 5억 + 배우자공제 최소 5억
+          deductionDetails = [
+            `<div class="row"><span style="font-size:12px;">일괄공제</span><span style="font-size:12px;">5억 원</span></div>`,
+            `<div class="row"><span style="font-size:12px;">배우자공제(최소)</span><span style="font-size:12px;">5억 원</span></div>`
+          ];
         } else if (hasSpouse) {
-          deduct = 700000000; // 기초 2억 + 배우자 최소 5억
-        } else if (childCount > 0) {
-          deduct = 500000000; // 일괄공제 5억
+          totalDeduct = 700000000; // 기초 2억 + 배우자 최소 5억
+          deductionDetails.push(`<div class="row"><span style="font-size:12px;">배우자공제(최소)</span><span style="font-size:12px;">5억 원</span></div>`);
+        } else if (counts.child > 0) {
+          totalDeduct = 500000000; // 일괄공제 5억
+          deductionDetails = [`<div class="row"><span style="font-size:12px;">일괄공제</span><span style="font-size:12px;">5억 원</span></div>`];
         }
 
-        const base = Math.max(0, total - deduct);
+        const base = Math.max(0, total - totalDeduct);
         const rateInfo = getPropTaxRateInfo(base);
-        const totalInheritTax = (base * rateInfo.rate - rateInfo.deduct) * 0.97; // 신고세액공제 3%
-        const acqTax = prop * 0.0316; // 상속취득세율 (표준 2.8% + 부가세)
+        const totalInheritTax = (base * rateInfo.rate - rateInfo.deduct) * 0.97;
+        const acqTax = prop * 0.0316;
 
         // 배분 로직 (법정상속비율: 배우자 1.5, 자녀 1.0)
         let totalRatio = 0;
         if (hasSpouse) totalRatio += 1.5;
-        totalRatio += childCount * 1.0;
+        totalRatio += counts.child * 1.0;
         
-        // 만약 자녀/배우자 없으면 입력된 다른 상속인들이 균등 배분한다고 가정
         if (totalRatio === 0) {
-          totalRatio = siblingCount + relativeCount + otherCount;
+          totalRatio = counts.sibling + counts.relative + counts.other;
         }
 
         let breakdownHtml = '';
         if (totalRatio > 0) {
           if (hasSpouse) {
             const spouseTax = totalInheritTax * (1.5 / totalRatio);
-            breakdownHtml += `<div class="row"><span>배우자 분담분</span><span>${formatCurrency(spouseTax)} 원</span></div>`;
+            breakdownHtml += `<div class="row"><span>배우자 분담분 (1.5)</span><span>${formatCurrency(spouseTax)} 원</span></div>`;
           }
-          if (childCount > 0) {
+          if (counts.child > 0) {
             const perChildTax = totalInheritTax * (1.0 / totalRatio);
-            breakdownHtml += `<div class="row"><span>자녀 분담분 (인당)</span><span>${formatCurrency(perChildTax)} 원</span></div>`;
+            breakdownHtml += `<div class="row"><span>자녀 분담분 (인당 1.0)</span><span>${formatCurrency(perChildTax)} 원</span></div>`;
           }
-          if (totalRatio === (siblingCount + relativeCount + otherCount)) {
+          if (totalRatio === (counts.sibling + counts.relative + counts.other)) {
             const perOtherTax = totalInheritTax / totalRatio;
-            if (siblingCount > 0) breakdownHtml += `<div class="row"><span>형제자매 (인당)</span><span>${formatCurrency(perOtherTax)} 원</span></div>`;
-            if (relativeCount > 0) breakdownHtml += `<div class="row"><span>혈족 (인당)</span><span>${formatCurrency(perOtherTax)} 원</span></div>`;
-            if (otherCount > 0) breakdownHtml += `<div class="row"><span>기타 (인당)</span><span>${formatCurrency(perOtherTax)} 원</span></div>`;
+            if (counts.sibling > 0) breakdownHtml += `<div class="row"><span>형제자매 (${counts.sibling}명 분담)</span><span>${formatCurrency(perOtherTax * counts.sibling)} 원</span></div>`;
+            if (counts.relative > 0) breakdownHtml += `<div class="row"><span>4촌혈족 (${counts.relative}명 분담)</span><span>${formatCurrency(perOtherTax * counts.relative)} 원</span></div>`;
+            if (counts.other > 0) breakdownHtml += `<div class="row"><span>기타 (${counts.other}명 분담)</span><span>${formatCurrency(perOtherTax * counts.other)} 원</span></div>`;
           }
         }
 
@@ -406,14 +446,23 @@ document.addEventListener('DOMContentLoaded', () => {
           label: '상속세 정밀 분석 결과', 
           main: totalInheritTax + acqTax, 
           details: `
-          <div class="row"><span>총 상속 공제액</span><span>${formatCurrency(deduct)} 원</span></div>
+          <div style="background: var(--color-background); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+            ${deductionDetails.join('')}
+            <div class="row" style="border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 4px;">
+              <strong>총 공제액 합계</strong>
+              <strong>${formatCurrency(totalDeduct)} 원</strong>
+            </div>
+          </div>
           <div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div>
           <div class="row"><span>적용 세율</span><span>${rateInfo.text}</span></div>
           <div class="row" style="margin-top: 8px; border-top: 1px dashed var(--color-border); padding-top: 8px;">
             <strong>총 예상 상속세</strong>
             <strong style="color: var(--color-primary);">${formatCurrency(totalInheritTax)} 원</strong>
           </div>
-          ${breakdownHtml}
+          <div style="margin: 8px 0; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px;">
+            <p style="font-size: 11px; color: var(--color-text-caption); margin-bottom: 4px;">법정 지분별 세액 배분</p>
+            ${breakdownHtml}
+          </div>
           <div class="row"><span>상속취득세 합계</span><span>${formatCurrency(acqTax)} 원</span></div>` 
         };
       } else if (type === 'acq') {
