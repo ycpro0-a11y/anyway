@@ -48,43 +48,82 @@
           <!-- 1. 증여세 -->
           <div id="tax-input-gift" class="tax-form-group" style="display: none;">
             <div class="input-group">
-              <label for="gift-amount">총 증여 재산가액 (원)</label>
-              <div class="input-wrapper">
-                <input type="text" id="gift-amount" placeholder="전체 증여액">
-                <span class="currency">원</span>
+              <label>수증인별 증여 설정 (1인당 가액 입력)</label>
+              <div class="gift-grid" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- 배우자 -->
+                <div class="gift-row" style="background: var(--color-input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; font-weight: 600;">배우자 (최대 1명)</span>
+                    <input type="number" id="gift-spouse-count" value="0" min="0" max="1" class="select-field" style="width: 60px; height: 30px; text-align: center;">
+                  </div>
+                  <div class="input-wrapper">
+                    <input type="text" id="gift-spouse-amount" placeholder="1인당 증여 가액">
+                    <span class="currency">원</span>
+                  </div>
+                </div>
+                <!-- 성인자녀 -->
+                <div class="gift-row" style="background: var(--color-input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; font-weight: 600;">성인자녀</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="gift-adult-child-count" value="0" min="0" class="select-field" style="width: 60px; height: 30px; text-align: center;">
+                      <span style="font-size: 12px;">명</span>
+                    </div>
+                  </div>
+                  <div class="input-wrapper">
+                    <input type="text" id="gift-adult-child-amount" placeholder="1인당 증여 가액">
+                    <span class="currency">원</span>
+                  </div>
+                </div>
+                <!-- 미성년자녀 -->
+                <div class="gift-row" style="background: var(--color-input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; font-weight: 600;">미성년자녀</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="gift-minor-child-count" value="0" min="0" class="select-field" style="width: 60px; height: 30px; text-align: center;">
+                      <span style="font-size: 12px;">명</span>
+                    </div>
+                  </div>
+                  <div class="input-wrapper">
+                    <input type="text" id="gift-minor-child-amount" placeholder="1인당 증여 가액">
+                    <span class="currency">원</span>
+                  </div>
+                </div>
+                <!-- 친족 -->
+                <div class="gift-row" style="background: var(--color-input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; font-weight: 600;">친족(6촌이내)</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="gift-relative-count" value="0" min="0" class="select-field" style="width: 60px; height: 30px; text-align: center;">
+                      <span style="font-size: 12px;">명</span>
+                    </div>
+                  </div>
+                  <div class="input-wrapper">
+                    <input type="text" id="gift-relative-amount" placeholder="1인당 증여 가액">
+                    <span class="currency">원</span>
+                  </div>
+                </div>
+                <!-- 기타 -->
+                <div class="gift-row" style="background: var(--color-input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; font-weight: 600;">기타(타인)</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="gift-other-count" value="0" min="0" class="select-field" style="width: 60px; height: 30px; text-align: center;">
+                      <span style="font-size: 12px;">명</span>
+                    </div>
+                  </div>
+                  <div class="input-wrapper">
+                    <input type="text" id="gift-other-amount" placeholder="1인당 증여 가액">
+                    <span class="currency">원</span>
+                  </div>
+                </div>
               </div>
-              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">* 전체 금액을 아래 입력된 총 인원수로 균등하게 분할하여 계산합니다.</p>
             </div>
             <div class="input-group">
               <label for="gift-prop-amount">이 중 부동산 가액 (선택)</label>
               <div class="input-wrapper">
                 <input type="text" id="gift-prop-amount" placeholder="부동산 취득세 계산용">
                 <span class="currency">원</span>
-              </div>
-            </div>
-            <div class="input-group">
-              <label>수증인 구성 (관계별 인원수)</label>
-              <div class="grid-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div class="input-item">
-                  <label for="gift-spouse-count" style="font-size: 12px; color: var(--color-text-caption);">배우자 수</label>
-                  <input type="number" id="gift-spouse-count" value="0" min="0" max="1" class="select-field" style="height: 36px; padding: 4px 8px;">
-                </div>
-                <div class="input-item">
-                  <label for="gift-adult-child-count" style="font-size: 12px; color: var(--color-text-caption);">성인자녀 수</label>
-                  <input type="number" id="gift-adult-child-count" value="1" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
-                </div>
-                <div class="input-item">
-                  <label for="gift-minor-child-count" style="font-size: 12px; color: var(--color-text-caption);">미성년자녀 수</label>
-                  <input type="number" id="gift-minor-child-count" value="0" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
-                </div>
-                <div class="input-item">
-                  <label for="gift-relative-count" style="font-size: 12px; color: var(--color-text-caption);">친족(6촌이내)</label>
-                  <input type="number" id="gift-relative-count" value="0" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
-                </div>
-                <div class="input-item">
-                  <label for="gift-other-count" style="font-size: 12px; color: var(--color-text-caption);">기타(타인)</label>
-                  <input type="number" id="gift-other-count" value="0" min="0" class="select-field" style="height: 36px; padding: 4px 8px;">
-                </div>
               </div>
             </div>
           </div>
