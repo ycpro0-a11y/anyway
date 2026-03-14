@@ -37,9 +37,8 @@
               </optgroup>
               <optgroup label="부동산 및 기타">
                 <option value="acq">취득세 (부동산 매수)</option>
-                <option value="prop">재산세 (보유)</option>
-                <option value="comp">종합부동산세 (보유)</option>
-                <option value="gain" selected>양도소득세 (매도)</option>
+                <option value="holding" selected>보유세 (재산세 + 종부세)</option>
+                <option value="gain">양도소득세 (매도)</option>
                 <option value="vat">부가가치세 (VAT)</option>
               </optgroup>
             </select>
@@ -205,11 +204,11 @@
             </div>
           </div>
 
-          <!-- 4. 재산세 -->
-          <div id="tax-input-prop" class="tax-form-group" style="display: none;">
+          <!-- 4. 통합 보유세 (재산세 + 종부세) -->
+          <div id="tax-input-holding" class="tax-form-group" style="display: none;">
             <div class="input-group">
-              <label for="prop-asset-type">과세 대상 구분</label>
-              <select id="prop-asset-type" class="select-field">
+              <label for="holding-asset-type">과세 대상 구분</label>
+              <select id="holding-asset-type" class="select-field">
                 <option value="house" selected>주택 (아파트, 빌라, 단독 등)</option>
                 <option value="building">건축물 (상가, 사무실 등)</option>
                 <option value="land">토지 (대지, 임야 등)</option>
@@ -217,155 +216,44 @@
             </div>
 
             <div class="input-group">
-              <label for="prop-value">시가표준액 (공시가격)</label>
+              <label for="holding-value">시가표준액 (공시가격 합계)</label>
               <div class="input-wrapper">
-                <input type="text" id="prop-value">
+                <input type="text" id="holding-value" placeholder="공시가격 기준">
                 <span class="currency">원</span>
               </div>
+              <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">* 종부세는 전국 합산 가액 기준이며, 재산세는 물건별 기준입니다.</p>
             </div>
 
-            <!-- 주택 전용 옵션 -->
-            <div id="prop-house-option">
+            <div id="holding-house-options">
               <div class="input-group">
-                <label>1세대 1주택 여부 (특례세율)</label>
+                <label>1세대 1주택 여부 (특례 적용)</label>
                 <div class="radio-group">
-                  <input type="radio" id="prop-h1-no" name="prop-h1" value="no" checked>
-                  <label for="prop-h1-no">해당없음</label>
-                  <input type="radio" id="prop-h1-yes" name="prop-h1" value="yes">
-                  <label for="prop-h1-yes">1주택자</label>
+                  <input type="radio" id="holding-h1-no" name="holding-h1" value="no" checked>
+                  <label for="holding-h1-no">해당없음</label>
+                  <input type="radio" id="holding-h1-yes" name="holding-h1" value="yes">
+                  <label for="holding-h1-yes">1주택자</label>
                 </div>
-                <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
-                  * 공시가격 9억 이하 1주택자에게는 -0.05%p 인하된 특례세율이 적용됩니다.
-                </p>
               </div>
-            </div>
-
-            <!-- 토지 전용 옵션 -->
-            <div id="prop-land-option" style="display: none;">
               <div class="input-group">
-                <label for="prop-land-type">토지 과세 구분</label>
-                <select id="prop-land-type" class="select-field">
-                  <option value="gen">종합합산 (나대지, 잡종지 등)</option>
-                  <option value="sep">별도합산 (상가부속토지 등)</option>
-                  <option value="div">분리과세 (전, 답, 과수원 등)</option>
-                </select>
+                <label>총 보유 주택 수 (종부세 중과)</label>
+                <div class="radio-group">
+                  <input type="radio" id="holding-count-1" name="holding-count" value="1" checked>
+                  <label for="holding-count-1">1주택</label>
+                  <input type="radio" id="holding-count-2" name="holding-count" value="2">
+                  <label for="holding-count-2">2주택</label>
+                  <input type="radio" id="holding-count-3" name="holding-count" value="3">
+                  <label for="holding-count-3">3주택+</label>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- 5. 종부세 -->
-          <div id="tax-input-comp" class="tax-form-group" style="display: none;">
             <div class="input-group">
-              <label>납세자 구분</label>
+              <label>소유자 구분</label>
               <div class="radio-group">
-                <input type="radio" id="comp-owner-ind" name="comp-owner" value="ind" checked>
-                <label for="comp-owner-ind">개인</label>
-                <input type="radio" id="comp-owner-corp" name="comp-owner" value="corp">
-                <label for="comp-owner-corp">법인</label>
-              </div>
-            </div>
-
-            <div class="input-group">
-              <label for="comp-asset-type">과세 대상 구분</label>
-              <select id="comp-asset-type" class="select-field">
-                <option value="house" selected>주택 (분분/전체 합산)</option>
-                <option value="land_gen">토지 - 종합합산 (나대지 등)</option>
-                <option value="land_sep">토지 - 별도합산 (상가부속 등)</option>
-              </select>
-            </div>
-
-            <div class="input-group">
-              <label for="comp-value">보유 자산 공시가격 합계</label>
-              <div class="input-wrapper">
-                <input type="text" id="comp-value">
-                <span class="currency">원</span>
-              </div>
-            </div>
-
-            <!-- 주택 전용 옵션 -->
-            <div id="comp-house-option">
-              <!-- 개인용 옵션 -->
-              <div id="comp-ind-house-option">
-                <div class="input-group">
-                  <label>공제 유형 및 주택 수</label>
-                  <div class="radio-group">
-                    <input type="radio" id="comp-t1" name="comp-type" value="1200000000" checked>
-                    <label for="comp-t1">1주택(12억)</label>
-                    <input type="radio" id="comp-t2" name="comp-type" value="900000000">
-                    <label for="comp-t2">다주택(9억)</label>
-                  </div>
-                </div>
-                <div class="input-group">
-                  <label>3주택 이상 여부 (중과)</label>
-                  <div class="radio-group">
-                    <input type="radio" id="comp-multi-no" name="comp-multi" value="no" checked>
-                    <label for="comp-multi-no">2주택 이하</label>
-                    <input type="radio" id="comp-multi-yes" name="comp-multi" value="yes">
-                    <label for="comp-multi-yes">3주택 이상</label>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 법인용 옵션 -->
-              <div id="comp-corp-house-option" style="display: none;">
-                <div class="input-group">
-                  <label>법인 보유 주택 수</label>
-                  <div class="radio-group">
-                    <input type="radio" id="comp-corp-h2" name="comp-corp-multi" value="no" checked>
-                    <label for="comp-corp-h2">2주택 이하</label>
-                    <input type="radio" id="comp-corp-h3" name="comp-corp-multi" value="yes">
-                    <label for="comp-corp-h3">3주택 이상</label>
-                  </div>
-                </div>
-                <div class="input-group">
-                  <label>특례 적용 법인 (9억 공제)</label>
-                  <div class="radio-group">
-                    <input type="radio" id="comp-corp-sp-no" name="comp-corp-sp" value="no" checked>
-                    <label for="comp-corp-sp-no">일반법인</label>
-                    <input type="radio" id="comp-corp-sp-yes" name="comp-corp-sp" value="yes">
-                    <label for="comp-corp-sp-yes">특례법인</label>
-                  </div>
-                  <p style="font-size: 11px; color: var(--color-text-caption); margin-top: 4px;">
-                    * 공공주택사업자, 사회적기업 등은 개인(다주택)과 동일한 혜택 적용.
-                  </p>
-                </div>
-              </div>
-
-              <div class="input-group">
-                <label>임대사업자 합산배제 여부</label>
-                <div class="radio-group">
-                  <input type="radio" id="comp-rental1" name="comp-rental" value="no" checked>
-                  <label for="comp-rental1">미적용</label>
-                  <input type="radio" id="comp-rental2" name="comp-rental" value="yes">
-                  <label for="comp-rental2">합산배제 신청</label>
-                </div>
-              </div>
-
-              <!-- 종부세 합산배제 상세 -->
-              <div id="comp-rental-detail" style="display: none; background: var(--color-input-bg); padding: 12px; border-radius: var(--radius-sm); margin-top: -12px; border: 1px solid var(--color-border);">
-                <div class="input-group">
-                  <label for="comp-rental-exclude-value">합산배제 대상 주택 공시가 합계</label>
-                  <div class="input-wrapper">
-                    <input type="text" id="comp-rental-exclude-value" placeholder="배제될 금액">
-                    <span class="currency">원</span>
-                  </div>
-                </div>
-                <div class="input-group">
-                  <label for="comp-rental-reg-date">임대 등록 시기</label>
-                  <select id="comp-rental-reg-date" class="select-field">
-                    <option value="pre201803">2018.03.31 이전 (의무 5년)</option>
-                    <option value="post201804" selected>2018.04.01 이후 (의무 10년)</option>
-                  </select>
-                </div>
-                <div class="input-group">
-                  <label>취득 당시 조정대상지역 여부</label>
-                  <div class="radio-group">
-                    <input type="radio" id="comp-reg-area1" name="comp-reg-area" value="no" checked>
-                    <label for="comp-reg-area1">비조정</label>
-                    <input type="radio" id="comp-reg-area2" name="comp-reg-area" value="yes">
-                    <label for="comp-reg-area2">조정지역</label>
-                  </div>
-                </div>
+                <input type="radio" id="holding-owner-ind" name="holding-owner" value="ind" checked>
+                <label for="holding-owner-ind">개인</label>
+                <input type="radio" id="holding-owner-corp" name="holding-owner" value="corp">
+                <label for="holding-owner-corp">법인</label>
               </div>
             </div>
           </div>
