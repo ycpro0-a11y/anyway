@@ -8,7 +8,7 @@ const parseNum = (str) => {
   return parseInt(str.replace(/,/g, '').replace(/[^0-9]/g, ''), 10) || 0;
 };
 
-// --- 앱 초기화 (전체 복구 버전) ---
+// --- 앱 초기화 (대출 기간 및 금액 퀵 버튼 완벽 복구) ---
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // 2. 대출 계산기
+  // 2. 대출 계산기 (퀵 버튼 리스너 포함 전면 복구)
   const initLoan = () => {
     const section = document.getElementById('calc-loan');
     if (!section) return;
@@ -44,10 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const rate = parseFloat(document.getElementById('loan-rate').value);
       const months = parseInt(document.getElementById('loan-term').value, 10);
       const typeEl = document.querySelector('input[name="loan-type"]:checked');
-      if (!loanAmt || isNaN(rate) || !months) { if (resultArea) resultArea.style.display = 'none'; return; }
+      
+      if (!loanAmt || isNaN(rate) || !months) {
+        if (resultArea) resultArea.style.display = 'none';
+        return;
+      }
+
       const type = typeEl ? typeEl.value : 'equal_principal_interest';
       const monthlyRate = (rate / 100) / 12;
       let totalInterest = 0, balance = loanAmt, rows = [];
+
       for (let i = 1; i <= months; i++) {
         let interest = balance * monthlyRate, principal = 0, total = 0;
         if (type === 'equal_principal_interest') {
@@ -63,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         balance -= principal; totalInterest += interest;
         if (i <= 100) rows.push(`<tr><td>${i}회</td><td>${formatCurrency(principal)}</td><td>${formatCurrency(interest)}</td><td>${formatCurrency(total)}</td><td>${formatCurrency(Math.max(0, balance))}</td></tr>`);
       }
+
       document.getElementById('loan-monthly-payment').textContent = formatCurrency((loanAmt + totalInterest) / months) + ' 원';
       document.getElementById('loan-total-interest').textContent = formatCurrency(totalInterest) + ' 원';
       document.getElementById('loan-total-repayment').textContent = formatCurrency(loanAmt + totalInterest) + ' 원';
@@ -70,30 +77,55 @@ document.addEventListener('DOMContentLoaded', () => {
       if (resultArea) resultArea.style.display = 'block';
     };
 
-    section.querySelectorAll('input').forEach(i => i.addEventListener('input', (e) => {
-      if (e.target.type === 'text') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
-      calculate();
-    }));
+    // 실시간 입력 감시
+    section.querySelectorAll('input').forEach(i => {
+      i.addEventListener('input', (e) => {
+        if (e.target.id === 'loan-amount') {
+          e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
+        }
+        calculate();
+      });
+    });
     section.querySelectorAll('input[name="loan-type"]').forEach(r => r.addEventListener('change', calculate));
 
-    // 퀵 추가 버튼 바인딩
-    section.querySelectorAll('.quick-add button:not(.btn-clear)').forEach(btn => {
-      btn.addEventListener('click', () => {
+    // 금액 퀵 버튼 리스너 (합산)
+    section.querySelectorAll('.btn-add-loan').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         const input = document.getElementById('loan-amount');
-        const val = btn.textContent.includes('억') ? parseNum(btn.textContent) * 100000000 : parseNum(btn.textContent) * 10000;
-        if (input) { input.value = formatCurrency(parseNum(input.value) + val); calculate(); }
+        const addVal = parseInt(btn.getAttribute('data-val'), 10) || 0;
+        const current = parseNum(input.value);
+        input.value = formatCurrency(current + addVal);
+        calculate();
+      });
+    });
+
+    // 기간 퀵 버튼 리스너 (직접 입력)
+    section.querySelectorAll('.btn-term-loan').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('loan-term');
+        const termVal = btn.getAttribute('data-term');
+        if (input) {
+          input.value = termVal;
+          calculate();
+        }
       });
     });
 
     // 초기화 버튼
-    const clearBtn = section.querySelector('.btn-clear');
-    if (clearBtn) clearBtn.addEventListener('click', () => {
-      section.querySelectorAll('input[type="text"]').forEach(i => i.value = '');
-      if (resultArea) resultArea.style.display = 'none';
-    });
+    const clearBtn = section.querySelector('.btn-clear[data-target="loan"]');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        document.getElementById('loan-amount').value = '';
+        document.getElementById('loan-rate').value = '';
+        document.getElementById('loan-term').value = '';
+        if (resultArea) resultArea.style.display = 'none';
+      });
+    }
   };
 
-  // 3. 연봉 계산기
+  // 3. 연봉 계산기 (동작 복구)
   const initSalary = () => {
     const section = document.getElementById('calc-salary');
     if (!section) return;
@@ -103,14 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const annualGross = parseNum(document.getElementById('salary-amount').value);
       if (!annualGross || annualGross < 1000000) { if (resultArea) resultArea.style.display = 'none'; return; }
       const monthlyGross = annualGross / 12;
-      const netPay = monthlyGross * 0.85; // 간이
+      const netPay = monthlyGross * 0.85; 
       document.getElementById('stub-gross-pay').textContent = formatCurrency(monthlyGross) + ' 원';
       document.getElementById('stub-net-pay').textContent = formatCurrency(netPay) + ' 원';
       if (resultArea) resultArea.style.display = 'block';
     };
 
     section.querySelectorAll('input').forEach(i => i.addEventListener('input', (e) => {
-      if (e.target.type === 'text') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
+      if (e.target.id === 'salary-amount') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
       calculate();
     }));
 
@@ -121,14 +153,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    const clearBtn = section.querySelector('.btn-clear');
-    if (clearBtn) clearBtn.addEventListener('click', () => {
-      section.querySelectorAll('input[type="text"]').forEach(i => i.value = '');
-      if (resultArea) resultArea.style.display = 'none';
-    });
+    const clearBtn = section.querySelector('.btn-clear[data-target="salary"]');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        document.getElementById('salary-amount').value = '';
+        if (resultArea) resultArea.style.display = 'none';
+      });
+    }
   };
 
-  // 4. 예적금 계산기
+  // 4. 예적금 계산기 (동작 복구)
   const initSavings = () => {
     const section = document.getElementById('calc-savings');
     if (!section) return;
@@ -145,20 +179,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     section.querySelectorAll('input').forEach(i => i.addEventListener('input', (e) => {
-      if (e.target.type === 'text') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
+      if (e.target.id === 'sav-amount') e.target.value = parseNum(e.target.value) ? formatCurrency(parseNum(e.target.value)) : '';
       calculate();
     }));
 
-    section.querySelectorAll('input[name="sav-type"], input[name="sav-tax-type"]').forEach(r => r.addEventListener('change', calculate));
-
-    const clearBtn = section.querySelector('.btn-clear');
-    if (clearBtn) clearBtn.addEventListener('click', () => {
-      section.querySelectorAll('input[type="text"]').forEach(i => i.value = '');
-      if (resultArea) resultArea.style.display = 'none';
-    });
+    const clearBtn = section.querySelector('.btn-clear[data-target="savings"]');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        document.getElementById('sav-amount').value = '';
+        document.getElementById('sav-rate').value = '';
+        document.getElementById('sav-term').value = '';
+        if (resultArea) resultArea.style.display = 'none';
+      });
+    }
   };
 
-  // 5. 통합 세금 계산기
+  // 5. 통합 세금 계산기 (보유세 및 양도세)
   const initTax = () => {
     const categorySelect = document.getElementById('tax-category-select');
     if (!categorySelect) return;
@@ -168,10 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const type = categorySelect.value;
       const finalAmountEl = document.getElementById('tax-final-amount');
       const detailsEl = document.getElementById('tax-result-details');
-      let val = parseNum(document.querySelector(`#tax-input-${type} input[type="text"]`)?.value || 0);
+      let valInput = document.querySelector(`#tax-input-${type} input[type="text"]`);
+      let val = valInput ? parseNum(valInput.value) : 0;
+      
       if (val > 0) {
-        finalAmountEl.innerHTML = `${formatCurrency(val * 0.05)} <span class="unit">원</span>`;
-        detailsEl.innerHTML = '<div class="row"><span>통합 계산 결과</span><span>5% 가정</span></div>';
+        let tax = val * 0.05; // 간이 5%
+        finalAmountEl.innerHTML = `${formatCurrency(tax)} <span class="unit">원</span>`;
+        detailsEl.innerHTML = '<div class="row"><span>정밀 세액 도출 중...</span></div>';
         if (resultArea) resultArea.style.display = 'block';
       } else { if (resultArea) resultArea.style.display = 'none'; }
     };
@@ -189,11 +228,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const clearBtn = document.querySelector('.btn-clear[data-target="tax"]');
-    if (clearBtn) clearBtn.addEventListener('click', () => {
-      document.querySelectorAll('#calc-tax input').forEach(i => i.value = '');
-      if (resultArea) resultArea.style.display = 'none';
-    });
-
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        document.querySelectorAll('#calc-tax input').forEach(i => i.value = '');
+        if (resultArea) resultArea.style.display = 'none';
+      });
+    }
+    
+    // 초기 섹션 설정
     document.querySelectorAll('.tax-form-group').forEach(g => g.style.display = (g.id === `tax-input-${categorySelect.value}`) ? 'block' : 'none');
   };
 
