@@ -121,6 +121,35 @@ body {
   background-color: var(--color-surface); color: var(--color-primary); box-shadow: var(--shadow-sm);
 }
 
+.select-field {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-title);
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: var(--font-family);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238B95A1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+}
+
+.select-field:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: 0 0 0 4px var(--color-highlight);
+}
+
+.tax-form-group {
+  animation: fadeIn 0.3s ease;
+}
+
 .help-text { font-size: 13px; color: var(--color-text-caption); margin-top: 8px; }
 
 /* Result Area */
