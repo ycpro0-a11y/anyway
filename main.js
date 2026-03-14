@@ -59,7 +59,7 @@ const initApp = () => {
     });
   });
 
-  // 2. 세금 계산기 (정밀 로직 및 상세 내역 복구)
+  // 2. 세금 계산기 (상세 요율 및 특례 명시 강화)
   const initTax = () => {
     const categorySelect = document.getElementById('tax-category-select');
     if (!categorySelect) return;
@@ -77,17 +77,29 @@ const initApp = () => {
         const isReg = document.querySelector('input[name="acq-area"]:checked')?.value === 'reg';
         if (amt > 0) {
           let rate = 0.01;
+          let rateText = "";
           if (houseCount === '1') {
             if (amt > 600000000 && amt <= 900000000) rate = (amt * 2 / 300000000 - 3) / 100;
             else if (amt > 900000000) rate = 0.03;
-          } else if (houseCount === '2') rate = isReg ? 0.08 : 0.01; // 간이
-          else rate = isReg ? 0.12 : 0.08;
+            rateText = "1주택 기본세율 (1~3%)";
+          } else if (houseCount === '2') {
+            rate = isReg ? 0.08 : (amt > 900000000 ? 0.03 : (amt > 600000000 ? (amt * 2 / 300000000 - 3) / 100 : 0.01));
+            rateText = isReg ? "조정대상지역 2주택 중과 (8%)" : "비조정지역 2주택 기본세율";
+          } else {
+            rate = isReg ? 0.12 : 0.08;
+            rateText = isReg ? "조정대상지역 3주택 중과 (12%)" : "비조정지역 3주택 중과 (8%)";
+          }
           
           const tax = amt * rate;
-          const surtax = tax * 0.1; // 지방교육세 등
+          const surtax = tax * 0.1; // 지방교육세 등 가산세
           res = { 
             main: tax + surtax, 
-            details: `<div class="row"><span>적용 취득세율</span><span>${(rate * 100).toFixed(2)}%</span></div><div class="row"><span>취득세액</span><span>${formatCurrency(tax)} 원</span></div><div class="row"><span>지방교육세 등</span><span>${formatCurrency(surtax)} 원</span></div>`
+            details: `
+              <div class="row"><span>적용 세율 구분</span><span>${rateText}</span></div>
+              <div class="row"><span>최종 취득세율</span><span>${(rate * 100).toFixed(2)}%</span></div>
+              <div class="row"><span>취득세 본세</span><span>${formatCurrency(tax)} 원</span></div>
+              <div class="row"><span>지방교육세 등 부가세(10%)</span><span>${formatCurrency(surtax)} 원</span></div>
+            `
           };
         }
       } else if (type === 'prop') {
@@ -97,11 +109,17 @@ const initApp = () => {
         if (val > 0) {
           const fmvRate = assetType === 'house' ? 0.6 : 0.7;
           const base = val * fmvRate;
-          const rInfo = getPropertyTaxRate(base, assetType === 'house' && isH1 && val <= 900000000);
+          const isSpecial = assetType === 'house' && isH1 && val <= 900000000;
+          const rInfo = getPropertyTaxRate(base, isSpecial);
           const tax = base * rInfo.rate - rInfo.deduct;
           res = { 
             main: tax, 
-            details: `<div class="row"><span>공정시장가액비율</span><span>${fmvRate * 100}% (${assetType === 'house' ? '주택' : '기타'})</span></div><div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div><div class="row"><span>적용 세율</span><span>${(rInfo.rate * 100).toFixed(2)}% ${isH1 ? '(특례)' : ''}</span></div>` 
+            details: `
+              <div class="row"><span>공정시장가액비율</span><span>${fmvRate * 100}% (${assetType === 'house' ? '주택' : '토지/건물'})</span></div>
+              <div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div>
+              <div class="row"><span>1주택자 특례세율</span><span>${isSpecial ? '적용 (-0.05%p)' : '미적용'}</span></div>
+              <div class="row"><span>최종 적용 세율</span><span>${(rInfo.rate * 100).toFixed(2)}%</span></div>
+            ` 
           };
         }
       } else if (type === 'comp') {
@@ -113,10 +131,15 @@ const initApp = () => {
           let deduct = (ownerType === 'ind' && assetType === 'house') ? (houseCount === 'h1' ? 1200000000 : 900000000) : 0;
           const fmvRate = assetType === 'house' ? 0.6 : 1.0;
           const base = Math.max(0, val - deduct) * fmvRate;
-          const rate = houseCount === 'h3' ? 0.02 : 0.01; // 간이
+          const rate = houseCount === 'h3' ? 0.02 : 0.01; 
           res = { 
             main: base * rate, 
-            details: `<div class="row"><span>기본 공제액</span><span>-${formatCurrency(deduct)} 원</span></div><div class="row"><span>공정시장가액비율</span><span>${fmvRate * 100}% 적용</span></div><div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div>` 
+            details: `
+              <div class="row"><span>종부세 기본공제액</span><span>-${formatCurrency(deduct)} 원 (${houseCount === 'h1' ? '1주택' : '다주택'})</span></div>
+              <div class="row"><span>공정시장가액비율</span><span>${fmvRate * 100}% 적용</span></div>
+              <div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div>
+              <div class="row"><span>구간 세율(간이)</span><span>${(rate * 100).toFixed(1)}%</span></div>
+            ` 
           };
         }
       } else if (type === 'gain') {
@@ -130,7 +153,15 @@ const initApp = () => {
           const base = Math.max(0, taxableProfit * (1 - dRate) - 2500000);
           const rInfo = getGainTaxRate(base);
           const tax = (base * rInfo.rate - rInfo.deduct) * 1.1;
-          res = { main: taxableProfit === 0 ? 0 : tax, details: `<div class="row"><span>장기보유특별공제</span><span>${(dRate * 100).toFixed(0)}% 적용</span></div><div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div><div class="row"><span>적용 세율</span><span>${(rInfo.rate * 100).toFixed(0)}%</span></div>` };
+          res = { 
+            main: taxableProfit === 0 ? 0 : tax, 
+            details: `
+              <div class="row"><span>비과세 여부 (12억)</span><span>${isH1 ? (sell <= 1200000000 ? '전액 비과세' : '12억 초과분 과세') : '해당없음'}</span></div>
+              <div class="row"><span>장기보유특별공제율</span><span>${(dRate * 100).toFixed(0)}% (연 4%+4% 특례 등)</span></div>
+              <div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div>
+              <div class="row"><span>양도소득세율</span><span>${(rInfo.rate * 100).toFixed(0)}% (누진세율)</span></div>
+            ` 
+          };
         }
       } else if (type === 'gift') {
         const configs = [{id:'spouse', l:'배우자', d:600000000}, {id:'adult-child', l:'성인자녀', d:50000000}, {id:'minor-child', l:'미성년자녀', d:20000000}, {id:'relative', l:'친족', d:10000000}, {id:'other', l:'기타', d:0}];
@@ -140,10 +171,10 @@ const initApp = () => {
           if (cnt > 0 && amt > 0) {
             const base = Math.max(0, amt - c.d), r = getProgressiveTax(base), tax = (base * r.rate - r.deduct) * 0.97;
             totalTax += tax * cnt;
-            b += `<div class="row"><span>${c.l} (${cnt}명)</span><span>인당 ${formatCurrency(tax)} 원 (세율 ${r.text})</span></div>`;
+            b += `<div class="row"><span>${c.l} (${cnt}명)</span><span>공제 ${formatCurrency(c.d)} / 세율 ${r.text}</span></div>`;
           }
         });
-        if (totalTax > 0) res = { main: totalTax, details: b };
+        if (totalTax > 0) res = { main: totalTax, details: b + `<div class="row"><span>신고세액공제</span><span>3% 적용 완료</span></div>` };
       }
 
       if (res) {
