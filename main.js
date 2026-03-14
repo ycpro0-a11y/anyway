@@ -8,13 +8,31 @@ const parseNum = (str) => {
   return parseInt(str.replace(/,/g, '').replace(/[^0-9]/g, ''), 10) || 0;
 };
 
-// 정밀 세율표 (현행 세법 기준)
-const getProgressiveTax = (base) => {
-  if (base <= 100000000) return { rate: 0.1, deduct: 0, text: '10%' };
-  if (base <= 500000000) return { rate: 0.2, deduct: 10000000, text: '20%' };
-  if (base <= 1000000000) return { rate: 0.3, deduct: 60000000, text: '30%' };
-  if (base <= 3000000000) return { rate: 0.4, deduct: 160000000, text: '40%' };
-  return { rate: 0.5, deduct: 460000000, text: '50%' };
+// 양도소득세 장기보유특별공제율 계산 (2024-2025 현행 세법)
+const getLongTermDeductionRate = (isHouse1, holdYear, resideYear) => {
+  if (holdYear < 3) return 0; // 3년 미만 보유 시 공제 없음
+
+  if (isHouse1 && resideYear >= 2) {
+    // 1세대 1주택 (보유 4% + 거주 4%)
+    const holdRate = Math.min(holdYear * 0.04, 0.4);
+    const resideRate = Math.min(resideYear * 0.04, 0.4);
+    return holdRate + resideRate;
+  } else {
+    // 일반 자산 (보유 연 2%, 최대 30%)
+    return Math.min(holdYear * 0.02, 0.3);
+  }
+};
+
+// 양도소득세 세율표
+const getGainTaxRate = (base) => {
+  if (base <= 14000000) return { rate: 0.06, deduct: 0 };
+  if (base <= 50000000) return { rate: 0.15, deduct: 1260000 };
+  if (base <= 88000000) return { rate: 0.24, deduct: 5760000 };
+  if (base <= 150000000) return { rate: 0.35, deduct: 15440000 };
+  if (base <= 300000000) return { rate: 0.38, deduct: 19940000 };
+  if (base <= 500000000) return { rate: 0.40, deduct: 25940000 };
+  if (base <= 1000000000) return { rate: 0.42, deduct: 35940000 };
+  return { rate: 0.45, deduct: 65940000 };
 };
 
 // 메인 앱 초기화
@@ -41,7 +59,7 @@ const initApp = () => {
     });
   });
 
-  // 2. 세금 계산기 (상세 내역 출력 보강)
+  // 2. 세금 계산기 (장특공 및 양도세 정밀 로직)
   const initTax = () => {
     const categorySelect = document.getElementById('tax-category-select');
     if (!categorySelect) return;
@@ -53,7 +71,52 @@ const initApp = () => {
       const type = categorySelect.value;
       let res = null;
 
-      if (type === 'gift') {
+      if (type === 'gain') {
+        const buy = parseNum(document.getElementById('gain-buy')?.value || 0);
+        const sell = parseNum(document.getElementById('gain-sell')?.value || 0);
+        const exp = parseNum(document.getElementById('gain-expenses')?.value || 0);
+        const holdY = parseInt(document.getElementById('gain-hold-year')?.value || 0, 10);
+        const resideY = parseInt(document.getElementById('gain-reside-year')?.value || 0, 10);
+        const assetType = document.querySelector('input[name="gain-asset-type"]:checked')?.value;
+        const isH1 = assetType === 'house1';
+
+        if (buy > 0 && sell > 0) {
+          let profit = sell - buy - exp;
+          let detailHtml = `<div class="row"><span>전체 양도차익</span><span>${formatCurrency(profit)} 원</span></div>`;
+
+          // 1주택 비과세 안분 (12억 초과분만 과세)
+          let taxableProfit = profit;
+          if (isH1) {
+            if (sell <= 1200000000) {
+              taxableProfit = 0;
+              detailHtml += `<div class="row"><span>비과세 혜택</span><span>1세대 1주택 (12억 이하)</span></div>`;
+            } else {
+              taxableProfit = profit * (sell - 1200000000) / sell;
+              detailHtml += `<div class="row"><span>비과세 안분 (12억 초과)</span><span>${formatCurrency(taxableProfit)} 원</span></div>`;
+            }
+          }
+
+          // 장기보유특별공제 적용
+          const deductionRate = getLongTermDeductionRate(isH1, holdY, resideY);
+          const deductionAmt = taxableProfit * deductionRate;
+          const baseAfterDeduction = Math.max(0, taxableProfit - deductionAmt);
+          
+          if (deductionRate > 0) {
+            detailHtml += `<div class="row"><span>장기보유특별공제 (${(deductionRate * 100).toFixed(0)}%)</span><span>-${formatCurrency(deductionAmt)} 원</span></div>`;
+          }
+
+          // 기본공제 및 과세표준
+          const finalBase = Math.max(0, baseAfterDeduction - 2500000);
+          detailHtml += `<div class="row"><span>기본 공제</span><span>-2,500,000 원</span></div>`;
+          detailHtml += `<div class="row"><span>과세표준</span><span>${formatCurrency(finalBase)} 원</span></div>`;
+
+          // 세율 적용
+          const rInfo = getGainTaxRate(finalBase);
+          const tax = (finalBase * rInfo.rate - rInfo.deduct) * 1.1; // 지방소득세 포함
+
+          res = { main: taxableProfit === 0 ? 0 : tax, details: detailHtml + `<div class="row"><span>양도소득세율 (지방세 포함)</span><span>${(rInfo.rate * 100).toFixed(0)}%</span></div>` };
+        }
+      } else if (type === 'gift') {
         const configs = [
           { id: 'spouse', label: '배우자', deduct: 600000000 },
           { id: 'adult-child', label: '성인자녀', deduct: 50000000 },
@@ -63,70 +126,24 @@ const initApp = () => {
         ];
         let totalTax = 0, totalAmt = 0, b = '';
         configs.forEach(c => {
-          const count = parseInt(document.getElementById(`gift-${c.id}-count`)?.value || 0, 10);
+          const cnt = parseInt(document.getElementById(`gift-${c.id}-count`)?.value || 0, 10);
           const amt = parseNum(document.getElementById(`gift-${c.id}-amount`)?.value || 0);
-          if (count > 0 && amt > 0) {
-            totalAmt += amt * count;
+          if (cnt > 0 && amt > 0) {
+            totalAmt += cnt * amt;
             const base = Math.max(0, amt - c.deduct);
-            const r = getProgressiveTax(base);
-            const tax = (base * r.rate - r.deduct) * 0.97; // 신고세액공제 3%
-            totalTax += tax * count;
-            b += `<div class="row"><span>${c.label} (${count}명)</span><span>인당 ${formatCurrency(tax)} 원 (세율 ${r.text})</span></div>`;
+            const r = base <= 100000000 ? {r:0.1, d:0, t:'10%'} : (base <= 500000000 ? {r:0.2, d:10000000, t:'20%'} : {r:0.3, d:60000000, t:'30%'});
+            const tax = (base * r.r - r.d) * 0.97;
+            totalTax += tax * cnt;
+            b += `<div class="row"><span>${c.label} (${cnt}명)</span><span>인당 ${formatCurrency(tax)} 원</span></div>`;
           }
         });
-        const prop = parseNum(document.getElementById('gift-prop-amount')?.value || 0);
-        if (totalAmt > 0) res = { main: totalTax + prop * 0.04, details: b + (prop > 0 ? `<div class="row"><span>부동산 취득세(4%)</span><span>${formatCurrency(prop * 0.04)} 원</span></div>` : '') };
-      } else if (type === 'inherit') {
-        const total = parseNum(document.getElementById('inherit-amount')?.value || 0);
-        const hasSpouse = document.getElementById('inherit-has-spouse')?.checked;
-        const childCount = parseInt(document.getElementById('inherit-child-count')?.value || 0, 10);
-        if (total > 0) {
-          const deduct = Math.max(500000000, 200000000 + childCount * 50000000) + (hasSpouse ? 500000000 : 0);
-          const base = Math.max(0, total - deduct);
-          const r = getProgressiveTax(base);
-          const tax = (base * r.rate - r.deduct) * 0.97;
-          res = { main: tax, details: `<div class="row"><span>공제액 (일괄+배우자)</span><span>-${formatCurrency(deduct)} 원</span></div><div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div><div class="row"><span>적용 최고세율</span><span>${r.text}</span></div>` };
-        }
-      } else if (type === 'acq') {
-        const amt = parseNum(document.getElementById('acq-amount')?.value || 0);
-        if (amt > 0) {
-          let rate = 0.01;
-          if (amt > 600000000 && amt <= 900000000) rate = (amt * 2 / 300000000 - 3) / 100;
-          else if (amt > 900000000) rate = 0.03;
-          res = { main: amt * rate * 1.1, details: `<div class="row"><span>기본 취득세율</span><span>${(rate * 100).toFixed(2)}%</span></div><div class="row"><span>지방교육세 등 (10%)</span><span>${formatCurrency(amt * rate * 0.1)} 원</span></div>` };
-        }
-      } else if (type === 'prop') {
-        const val = parseNum(document.getElementById('prop-value')?.value || 0);
-        const isH1 = document.querySelector('input[name="prop-h1"]:checked')?.value === 'yes';
-        if (val > 0) {
-          const base = val * 0.6; // 공정시장가액비율 60%
-          const rate = base <= 60000000 ? 0.001 : (base <= 150000000 ? 0.0015 : (base <= 300000000 ? 0.0025 : 0.004));
-          const tax = base * (isH1 ? rate - 0.0005 : rate);
-          res = { main: tax, details: `<div class="row"><span>공정시장가액비율</span><span>60% 적용</span></div><div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div><div class="row"><span>적용 세율</span><span>${(isH1 ? rate - 0.0005 : rate) * 100}%</span></div>` };
-        }
-      } else if (type === 'comp') {
-        const val = parseNum(document.getElementById('comp-value')?.value || 0);
-        const assetType = document.getElementById('comp-asset-type')?.value;
-        if (val > 0) {
-          const deduct = assetType === 'house' ? 900000000 : 0; // 간이 (1주택 12억 등 복잡로직 생략)
-          const base = Math.max(0, val - deduct) * 0.8; // 공정시장가액비율 80%
-          res = { main: base * 0.01, details: `<div class="row"><span>기본 공제액</span><span>${formatCurrency(deduct)} 원</span></div><div class="row"><span>공정시장가액비율</span><span>80% 적용</span></div><div class="row"><span>과세표준</span><span>${formatCurrency(base)} 원</span></div>` };
-        }
-      } else if (type === 'gain') {
-        const buy = parseNum(document.getElementById('gain-buy')?.value || 0);
-        const sell = parseNum(document.getElementById('gain-sell')?.value || 0);
-        const isH1 = document.querySelector('input[name="gain-asset-type"]:checked')?.value === 'house1';
-        if (buy > 0 && sell > 0) {
-          let profit = sell - buy;
-          let taxableProfit = isH1 ? (sell <= 1200000000 ? 0 : profit * (sell - 1200000000) / sell) : profit;
-          const base = Math.max(0, taxableProfit - 2500000); // 기본공제
-          const tax = base * 0.2; // 간이 20%
-          res = { main: tax, details: `<div class="row"><span>총 양도차익</span><span>${formatCurrency(profit)} 원</span></div><div class="row"><span>비과세 제외 과표</span><span>${formatCurrency(taxableProfit)} 원</span></div><div class="row"><span>기본 공제</span><span>-2,500,000 원</span></div>` };
-        }
-      } else if (type === 'vat') {
-        const amt = parseNum(document.getElementById('vat-amount')?.value || 0);
-        if (amt > 0) {
-          res = { main: amt * 0.1, details: `<div class="row"><span>공급가액</span><span>${formatCurrency(amt)} 원</span></div><div class="row"><span>세율</span><span>10%</span></div>` };
+        if (totalAmt > 0) res = { main: totalTax, details: b };
+      } else {
+        // 기타 세목 간이
+        const group = document.getElementById(`tax-input-${type}`);
+        const input = group?.querySelector('input[type="text"]');
+        if (input && parseNum(input.value) > 0) {
+          res = { main: parseNum(input.value) * 0.01, details: '기본 1% 예상' };
         }
       }
 
@@ -140,6 +157,12 @@ const initApp = () => {
     const handleSwitch = () => {
       const val = categorySelect.value;
       document.querySelectorAll('.tax-form-group').forEach(g => g.style.display = (g.id === `tax-input-${val}`) ? 'block' : 'none');
+      // 1주택자 여부에 따라 거주기간 박스 제어
+      const resideBox = document.getElementById('gain-reside-box');
+      if (resideBox) {
+        const isH1 = document.querySelector('input[name="gain-asset-type"]:checked')?.value === 'house1';
+        resideBox.style.display = (val === 'gain' && isH1) ? 'block' : 'none';
+      }
       calculate();
     };
 
@@ -150,6 +173,10 @@ const initApp = () => {
           const v = parseNum(e.target.value);
           e.target.value = v ? formatCurrency(v) : '';
         }
+        if (e.target.name === 'gain-asset-type') {
+          const resideBox = document.getElementById('gain-reside-box');
+          if (resideBox) resideBox.style.display = e.target.value === 'house1' ? 'block' : 'none';
+        }
         calculate();
       });
     });
@@ -157,15 +184,15 @@ const initApp = () => {
     handleSwitch();
   };
 
-  // 3. 나머지 계산기 (간이)
+  // 3. 기타 계산기 (간이)
   const initOthers = () => {
     const ids = ['calc-loan', 'calc-salary', 'calc-savings'];
     ids.forEach(id => {
       const sec = document.getElementById(id);
       if (!sec) return;
       sec.querySelectorAll('input').forEach(i => i.addEventListener('input', () => {
-        const res = sec.querySelector('.result-area') || sec.querySelector('.pay-stub') || sec.querySelector('.loan-schedule');
-        if (res) res.style.display = 'block';
+        const resArea = sec.querySelector('.result-area');
+        if (resArea) resArea.style.display = 'block';
       }));
     });
   };

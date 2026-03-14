@@ -404,20 +404,19 @@
                 <span class="currency">원</span>
               </div>
             </div>
-            <div class="input-group">
-              <label for="gain-hold-years">보유 기간 (년)</label>
-              <div class="input-wrapper">
-                <input type="number" id="gain-hold-years" placeholder="예: 5" min="0">
-                <span class="currency">년</span>
+
+            <!-- 보유 및 거주 기간 (장특공 계산용) -->
+            <div class="grid-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+              <div class="input-item">
+                <label for="gain-hold-year" style="font-size: 13px; color: var(--color-text-body); font-weight: 600; margin-bottom: 8px; display: block;">보유 기간 (년)</label>
+                <input type="number" id="gain-hold-year" value="3" min="0" class="select-field" style="height: 48px;">
+              </div>
+              <div id="gain-reside-box" class="input-item">
+                <label for="gain-reside-year" style="font-size: 13px; color: var(--color-text-body); font-weight: 600; margin-bottom: 8px; display: block;">거주 기간 (년)</label>
+                <input type="number" id="gain-reside-year" value="2" min="0" class="select-field" style="height: 48px;">
               </div>
             </div>
-            <div id="gain-live-option" class="input-group">
-              <label for="gain-live-years">거주 기간 (년)</label>
-              <div class="input-wrapper">
-                <input type="number" id="gain-live-years" placeholder="예: 2" min="0">
-                <span class="currency">년</span>
-              </div>
-            </div>
+
             <div class="input-group">
               <label>매도 지역 구분</label>
               <div class="radio-group">
